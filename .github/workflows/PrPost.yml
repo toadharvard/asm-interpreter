@@ -22,10 +22,11 @@ jobs:
 
     if: >
       ${{ github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.conclusion == 'success' }}
+
     steps:
-      - run: echo "event = ${{ github.event.workflow_run.event }}"
       - run: echo "conclusion  = ${{ github.event.workflow_run.conclusion }}"
 
+      - run: echo "event = ${{ github.event.workflow_run.event }}"
       #- name: Wait for build to succeed
       #  uses: fountainhead/action-wait-for-check@v1.1.0
       #  id: wait-for-build
@@ -35,7 +36,6 @@ jobs:
       #    ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Download artifact
-        id: download-artifact
         uses: dawidd6/action-download-artifact@v2
         with:
           workflow: PR.yml
@@ -53,7 +53,7 @@ jobs:
 
       - run: >
           echo '{"name":"PR postprocess","head_sha":"${{ github.sha }}"}' |
-            gh api /repos/Kakadu/fp2023/check-runs --input -
+            gh api /repos/Kakadu/${{ github.event.repository.name }}/check-runs --input -
         if: false
 
       - run: |
@@ -74,8 +74,7 @@ jobs:
       - run: >
           opam reinstall reviewer --yes
 
-      - name:  lints.rdjsonl
-        run: cat  lints.rdjsonl
+      - run: cat lints.rdjsonl
 
       - name: Run reviewer
         run: >
@@ -109,7 +108,7 @@ jobs:
         shell: bash
         run: |
           export TZ='Europe/Moscow'
-          echo "Linter report from $(date), for mini language ${{ env.LANG_NAME }}" > text.md
+          echo "Linter report from $(date +%F\ %k:%M), for mini language ${{ env.LANG_NAME }}" > text.md
           echo '```' >> text.md
           cat lints.txt >> text.md
           echo '```' >> text.md
@@ -130,6 +129,7 @@ jobs:
       - name: contents of escaped file
         if: false
         run: cat text.escaped.md
+
       #- name: contents of a variable
       #  run: echo ${{ steps.read-escaped-markdown.outputs.contents }}
 
@@ -141,12 +141,9 @@ jobs:
           issue-number: ${{ env.CI_PULL_REQUEST }}
           body-includes: Linter report from
           comment-author: github-actions[bot]
+
       - name: Tracing ${{ steps.fc.outputs.comment-id }}
-        run: |
-          echo "${{ steps.fc.outputs.comment-id }}"
-          echo "${{ steps.fc.outputs.comment-body }}"
-          echo "${{ steps.fc.outputs.comment-author }}"
-          echo "${{ steps.fc.outputs.comment-created-at }}"
+        run: echo "${{ steps.fc.outputs.comment-id }}"
 
       # The way to remove comments changes to prevent pulling extra docker image should exist.
       - name: Delete old comment
@@ -180,18 +177,20 @@ jobs:
       ${{ github.event.workflow_run.event == 'pull_request' &&
       github.event.workflow_run.conclusion == 'success' }}
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
       - name: Download odoc artifact
-        id: download-artifact
         uses: dawidd6/action-download-artifact@v2
         with:
           workflow: PR.yml
           name: docs
-          path: docs
+          path: _docs
 
-      - run: ls docs
+      #- run: ls docs
       - run: |
-          echo "LANG_NAME=$(cat docs/_found_lints/projectname.txt)" >> $GITHUB_ENV
-          echo "PR_NUMBER=$(cat docs/_found_lints/PR_number.txt)" >> $GITHUB_ENV
+          echo "LANG_NAME=$(cat _docs/_found_lints/projectname.txt)" >> $GITHUB_ENV
+          echo "PR_NUMBER=$(cat _docs/_found_lints/PR_number.txt)" >> $GITHUB_ENV
       - run: |
           echo "${{ env.LANG_NAME }}"
           echo "${{ env.PR_NUMBER }}"
@@ -202,25 +201,24 @@ jobs:
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}  # used only to publish in local repo
-          publish_dir: ./docs/_doc/_html
+          publish_dir: ./_docs/_doc/_html
           publish_branch: gh-pages
           enable_jekyll: false
           keep_files: true
           destination_dir: docs/${{ env.LANG_NAME }}
           commit_message: >
-            Deploying documentation for ${{ env.LANG_NAME }}: https://kakadu.github.io/fp2023/docs/${{ env.LANG_NAME }}
-          user_name: 'fp2023[bot]'
-          user_email: 'fp2023[bot]@users.noreply.github.com'
+            Deploying documentation for ${{ env.LANG_NAME }}: https://kakadu.github.io/${{ github.event.repository.name }}/docs/${{ env.LANG_NAME }}
+          user_name: '${{ github.event.repository.name }}[bot]'
+          user_email: '${{ github.event.repository.name }}[bot]@users.noreply.github.com'
 
       - name: Download coverage artifact
-        id: download-artifact
         uses: dawidd6/action-download-artifact@v2
         with:
           workflow: PR.yml
           name: coverage
-          path: .
+          path: _coverage
 
-      - run: ls _coverage
+      #- run: ls _coverage
 
       - name: Deploy coverage
         uses: peaceiris/actions-gh-pages@v3
@@ -232,26 +230,11 @@ jobs:
           keep_files: true
           destination_dir: cov/${{ env.LANG_NAME }}
           commit_message: >
-            Deploying coverage for ${{ env.LANG_NAME }}: https://kakadu.github.io/fp2023/cov/${{ env.LANG_NAME }}
-          user_name: 'fp2023[bot]'
-          user_email: 'fp2023[bot]@users.noreply.github.com'
+            Deploying coverage for ${{ env.LANG_NAME }}: https://kakadu.github.io/${{ github.event.repository.name }}/cov/${{ env.LANG_NAME }}
+          user_name: '${{ github.event.repository.name }}[bot]'
+          user_email: '${{ github.event.repository.name }}[bot]@users.noreply.github.com'
 
-      - shell: bash
-        run: >
-          cat > text.md <<-EOF
-              Документация построена $(TZ='Europe/Moscow' date), должна скоро появиться в https://kakadu.github.io/fp2023/docs/${{ env.LANG_NAME }}.
-
-              Тестовое покрытие $(cat _coverage/percent.txt) посчитано
-              в https://kakadu.github.io/fp2023/cov/${{ env.LANG_NAME }}
-          EOF
-
-      - id: get-comment-body
-        run: |
-          body=$(cat text.md)
-          body="${body//'%'/'%25'}"
-          body="${body//$'\n'/'%0A'}"
-          body="${body//$'\r'/'%0D'}"
-          echo "body=$body" >> $GITHUB_OUTPUT
+      - run: .github/make_doc_msg.sh "${{ github.event.repository.name }}" "${{ env.LANG_NAME }}" text.md
 
       - name: Find Comment
         uses: peter-evans/find-comment@v2
@@ -261,19 +244,20 @@ jobs:
           issue-number: ${{ env.PR_NUMBER }}
           body-includes: Документация построена
           comment-author: github-actions[bot]
-      - run: |
-          echo "${{ steps.fc.outputs.comment-id }}"
-          echo "${{ steps.fc.outputs.comment-body }}"
-          echo "${{ steps.fc.outputs.comment-author }}"
-          echo "${{ steps.fc.outputs.comment-created-at }}"
 
-      - name: Create comment
-        uses: peter-evans/create-or-update-comment@v1
+      #- run: |
+      #    echo "${{ steps.fc.outputs.comment-id }}"
+      #    echo "${{ steps.fc.outputs.comment-body }}"
+      #    echo "${{ steps.fc.outputs.comment-author }}"
+      #    echo "${{ steps.fc.outputs.comment-created-at }}"
+
+      - name: Create comment instead of "${{ steps.fc.outputs.comment-id }}"
+        uses: peter-evans/create-or-update-comment@v3
         with:
           comment-id: ${{ steps.fc.outputs.comment-id }}
           edit-mode: replace
           issue-number: ${{ env.PR_NUMBER }}
-          body: ${{ steps.get-comment-body.outputs.body }}
+          body-path: text.md
 
   ###################################################################################################
   process_clones:
@@ -284,7 +268,6 @@ jobs:
       github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Download artifact
-        id: download-artifact
         uses: dawidd6/action-download-artifact@v2
         with:
           workflow: PR.yml
@@ -294,19 +277,17 @@ jobs:
           echo "PR_NUMBER=$(cat PR_number.txt)" >> $GITHUB_ENV
           echo "LANG_NAME=$(cat projectname.txt)" >> $GITHUB_ENV
 
-
       - name: Find Comment
         uses: peter-evans/find-comment@v2
         id: fc
-        #if: ${{ always() }}
         with:
           issue-number: ${{ env.PR_NUMBER }}
           body-includes: "#### A report of looking for clones for mini language"
           comment-author: github-actions[bot]
 
-      - name: ${{ steps.fc.outputs.comment-id }}
-        run: |
-          echo "${{ steps.fc.outputs.comment-body }}"
+      #- name: ${{ steps.fc.outputs.comment-id }}
+      #  run: |
+      #    echo "${{ steps.fc.outputs.comment-body }}"
 
       - name: Delete old comment
         uses: jungwinter/comment@v1
