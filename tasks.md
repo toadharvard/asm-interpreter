@@ -3,7 +3,9 @@
 Ниже нарочито неформально даны описания мини-языков, интерпретатор которых вам предстоит реализовать на OCaml,
 чтобы получить допуск к финальной аттестации. Большинство тем задач выдаются на одного человека, т.е. почти у всех самостоятельная работа будет разная. Сдавать её надо как PR в этот репозиторий. Скопируйте шаблон из директории Lambda, под новым неповторяющимся именем, поменяйте название проекта и автора, и вперед.
 
-Если вера в собственные силы крайне мала, есть **одна отдельная тема для всех** тех, **кому достаточно** максимальной оценки **D**.
+Запись на тему делается добавлением в этот репо PR (желательно, проходящего CI). Кто первый успел, того и тапки.
+
+Если вера в собственные силы крайне мала, есть **одна отдельная тема для всех** тех, **кому достаточно** получить после экзамена максимальную оценку **D**.
 
 Во всех задачах нужно, чтобы
   * код в Git должен быть автоматически отформатирован с помощью ocamlformat.
@@ -19,22 +21,24 @@
 
 ### Тема для D
 
+Задача выдается, если вас устраивает итоговая оценка не выше D. Данная тема выдается неограниченному кругу студентов.
+
 Реализовать синтаксический анализатор (парсер), type checker и интерпретатор языка miniML, в котором поддерживаются следующие конструкции.
 
 * Функции как объекты первого класса (first class citizens): их нужно уметь передавать и возвращать из функций. Замыкания также нужны
 * Стандартные типы данных: bool, int и n-ки (англ. tuples)
-* Какие-нибудь стандартные функции, чтобы что-нибудь напечатать по ходу интепретации.
+* Стандартные функции, чтобы что-нибудь напечатать по ходу интепретации (печать строки, печать числа и т.п.).
 * Захардкоженный тип связного списка, сопоставление с образцом по нему. Полноценные алгебраические типы не надо.
 * Во всех задачах про OCaml, аргумент анонимной функции является так называемым паттерном (англ. pattern). Выражения там разрешать писать нельзя!
 
-#### Основные домашки
+### Основные домашки
 
 1. OCaml + ADT <details><summary>Подробнее</summary>
    * Всё, что есть в теме для D
    * алгебраические типы как основной способ проектирования типов; учтите, что
-	  * в OCaml и Haskell типы int и float -- примитивные (встроенные)
-	  * тип списков алгебраический и там, и там; в AST не должно быть, что списки отдельно, а алгебраические значения отдельно
-	  * в OCaml тип bool примитивный, а в Haskell -- алгебраический
+     * в OCaml и Haskell типы int и float -- примитивные (встроенные)
+     * тип списков алгебраический и там, и там; в AST не должно быть, что списки отдельно, а алгебраические значения отдельно
+     * в OCaml тип bool примитивный, а в Haskell -- алгебраический
    * разумеется, объявления типов, паттерн-мэтчинг и типизация
    * присваивание не надо
    * исключения не надо
@@ -50,26 +54,26 @@
    * поддержать синтаксис приписывания (англ. ascription) типов переменным
    * records (a.k.a. записи, структуры) c полями из базовых типов или других записей.
      * в случае перекрытия имен интерпретатор должен учесть приписанные типы. В примере ниже без аннотаций типов результат вывода будет другой
-		```ocaml
-		type t = { aa: int; bb: bool }
-		type s = { aa: float; cc: int }
-		let f (x : t) = x.aa
-		let g (x : s) = x.aa
-		```
+      ```ocaml
+      type t = { aa: int; bb: bool }
+      type s = { aa: float; cc: int }
+      let f (x : t) = x.aa
+      let g (x : s) = x.aa
+      ```
     </details>
 1. F# + active patterns <details><summary>Подробнее</summary>
    * Всё, что есть в теме для D
    * возможность описывать [активные паттерны](https://docs.microsoft.com/en-us/dotnet/fsharp/language-reference/active-patterns), которые выглядят как алгебраические конструкторы
-		```
-		let (|Even|Odd|) input = if input % 2 = 0 then Even else Odd
-		```
-	 * Возможность использования активных паттернов в сопоставлении с образцом
-		```
-		let TestNumber = function
-		| Even -> printf "%d is even\n" input
-		| Odd -> printf "%d is odd\n" input
-		```
-	 </details>
+      ```
+      let (|Even|Odd|) input = if input % 2 = 0 then Even else Odd
+      ```
+    * Возможность использования активных паттернов в сопоставлении с образцом
+      ```
+      let TestNumber = function
+      | Even -> printf "%d is even\n" input
+      | Odd -> printf "%d is odd\n" input
+      ```
+    </details>
 1. Haskell + стандартные типы данных + ленивость<details><summary>Подробнее</summary>
    * Всё, что есть в теме для D
    * С ленивостью надо будет продемонстрировать работоспособность
@@ -138,11 +142,14 @@
         Вы уже видели приписывание эффектов к функциям, а именно, приписывание бросаемых исключений в языке Java. Но так как там не было полиморфизма по этим "эффектам", то люди ненавидели эту штуку и поэтому, на сколько я знаю, в идеалогических наследниках Java этого нет.
    </details>
 1.
+1. OCaml + weak type variables
+   * Всё, что есть в теме для D
+   * https://ocamlverse.net/content/weak_type_variables.html. Присваивание неоходимо, так как без него тема безсодержательна.
 1. F# + Units of Measure
    * miniML: функции, полиморфизм, рекурсия
    * Числа (обосновано следующим пунктом)
    * Возможность объявлять и использовать [Units of Measure](https://docs.microsoft.com/en-us/dotnet/fsharp/language-reference/units-of-measure)
-1. Scheme + call/cc  <details><summary>Подробнее</summary>
+1. Scheme + call/cc <details><summary>Подробнее</summary>
    * относительно легко гуглящаяся особенность Scheme
    * call/cc
    * целые числа, рекурсия, списки, печать на консоль
@@ -189,6 +196,38 @@
    * Функции и функции высшего порядка
    * Стандартные конструкции: ветвления, цикл и т.п.
    * Присваивание и хитрые ассоциативные массивы с двойной индексацией, специфичные для Lua
+1. Javascript (2 человека)
+   * Объекты, числа, строки, массивы (т.е. присваивание надо)
+   * Функции обычные и анонимные, замыкания, рекурсия
+   * Типичное для Javascript прототипное наследование
+   * Стрёмные штуки из [WAT talk](https://www.destroyallsoftware.com/talks/wat) и [отсюда](https://github.com/denysdovhan/wtfjs/blob/master/README.md#table-of-contents). Их будет много (постепенно добавлю)
+1. Моделирование параллельного исполнения <details><summary>Подробнее</summary>
+   За описание благодарите старшего студента.
+   * Ast
+       Программа состоит из N параллельных участков. В них бывает арифметика, присваивание, thread-local registers (отдельный для каждого потока набор регистров, например EAX, EBX или r1, r2), shared variables (переменные в которые могут писать и из которых могут читать сразу несколько потоков), ветвления и барьеры чтения/записи.
+   * Parser
+        Код потока записывается в столбик, код разных потоков разделен с помощью значка |||. Потоки исполняются параллельно. Если нет идей как такое парсить, то попробуйте следующий способ. Научитесь парсить один конкретный поток по его индексу (нулевой, первый, …, N-1й), потом используя эту функцию распарсите все потоки по очереди и получите список распаршеных потоков.
+        Пример кода на этом языке:
+         ```
+         x <-1   ||| y<-1
+         smp_mb  ||| smp_mb
+         r1 <-y  ||| r2<-x
+         ```
+
+        Здесь x,y это shared переменные. r1,r2 – локальные для потока регистры. smp_mb – барьер памяти. В этом примере 2 параллельных потока, в каждом потоке 3 инструкции.
+   * **Интерпретатор**
+      Не стоит пугаться, на самом деле вы будете исполнять по одной инструкции за раз чередуя потоки из которых эта инструкция берётся. Модель же памяти будет влиять на операции чтения и записи: эффекты этих операций могут проявляться не в те моменты времени, как вам подсказывает интуиция, из-за этого возникают интересные поведения.
+      Отмечу, что интерпретатор должен осуществить всевозможные исполнения переданной ему на вход программы, с этим поможет монада List (или другая монада для недетерминизма).
+   * Описание моделей памяти:
+      * Sequential Consistency – простейшая модель, выбираете произвольный поток и исполняете в нем одну инструкцию. Повторяете пока есть неисполненные инструкции. Барьеры памяти в этой модели не оказывают эффекта на исполнение программы.
+      * TSO – модель памяти процессоров x86. Здесь возможны интересные поведения. Если в примере выше изначально в переменных x и y хранятся значения ноль, а также из кода будут удалены инструкции барьеров памяти (smp_mb), то возможны поведения, в которых после исполнения будет x == 0 и y == 0. При наличии барьеров памяти после исполнения хотя бы одна переменная всегда будет иметь значение один. Вообще этот код называется store buffering test о нём и не только о нём можно прочесть в статье a better x86 memory model.
+   * **Полезные материалы:**
+      * [Открытая лекция «weak memory models»](https://youtu.be/P4AnGeVFbzo?list=PLlb7e2G7aSpRgsZVTYYbpqiFrIcIpf8kp) от Антона Подкопаева. В CSC тоже были лекции на эту тему: [раз](https://www.youtube.com/watch?v=VcesAbhnGKU&list=PLlb7e2G7aSpQCPeKTcVBHJns_JOxrc_fT&index=11) и    [два](https://www.youtube.com/watch?v=kg0ZVbBdsMM&list=PLlb7e2G7aSpQCPeKTcVBHJns_JOxrc_fT&index=12).
+      * К двум лекциям от CSC необходимо добавить статью Memory Barriers: a Hardware View for Software Hackers ([http://www.puppetmastertrading.com/images/hwViewForSwHackers.pdf](http://www.puppetmastertrading.com/images/hwViewForSwHackers.pdf))
+      * Статья расскажет о том, что такое store buffer(write buffer) и как работают барьеры памяти. [A better x86 memory model: x86-TSO (extended version)](https://www.cl.cam.ac.uk/~pes20/weakmemory/x86tso-paper.pdf). В ней можно найти тесты (litmus tests) для модели x86 и проверить свой интерпретатор
+      * [СТАТЬЯ, КОТОРАЯ МЕНЯЕТ ВСЁ!](https://habr.com/ru/company/JetBrains-education/blog/523298/) После прочтения этой статьи в конце 3й недели работы над домашкой. Я за 2 часа удалил 2/3 своего кода и получил работающие модели. Поэтому я уверен, что она может сильно помочь, после того, как всё предыдущее будет изучено и что-то будет написано.
+   </details>
+
 
 <!--
 
@@ -224,9 +263,6 @@
    * Пользовательские классы можно не делать, один класс Program c кучей статических методов пойдет.
    * Стандартные типы данных, массивы
       * продемонстрировать на массивах `ArrayTypeMismatchException` </details>
-1. Pascal (Казанцев Антон)
-   * функции/процедуры, присваивание, стандартные типы и типы-записи
-   * динамическое выделение памяти не надо
 1. Объектно-ориентированый C# c классами, интерфейсами <details><summary>Алимов</summary>
     * Наследование классов и интерфейсов, без generics.
     * public/private/protected и override.
@@ -239,36 +275,34 @@
 
 
 
-
 1. OCaml + скомпилированные алгебраические типы (задача может показать объёмной, поэтому разрешаю сдавать в одной кодовой базе в месте с задаче про OCaml + алгебраические типы) <details><summary>Подробнее</summary>
-	  * Прочитать как окамлёвые алгебаические [типы представляются в памяти](https://dev.realworldocaml.org/runtime-memory-layout.html), разобраться как устроены "блоки" и unboxed immediate values
-	  * Написать парсер (параметризовать уже существующий из другой задачи) который понимает функции для конструирования/заглядывания в блоки
-	  * Интерпретатор этого дела.
-	  * Алгоритм преобразования программ с алгебраиками и сопоставлением с образцом в низкоуровневое представление.
-	  * Преобразования программ из задачи про ADT, в низкоуровневое представление этой задачи. (По сути надо избавляться от алгебраических значений и сопоставления с образцом. Можно посмотреть алгоритм с матрицами [отсюда](https://www.researchgate.net/publication/2840783_Optimizing_Pattern_Matching) )
+     * Прочитать как окамлёвые алгебаические [типы представляются в памяти](https://dev.realworldocaml.org/runtime-memory-layout.html), разобраться как устроены "блоки" и unboxed immediate values
+     * Написать парсер (параметризовать уже существующий из другой задачи) который понимает функции для конструирования/заглядывания в блоки
+     * Интерпретатор этого дела.
+     * Алгоритм преобразования программ с алгебраиками и сопоставлением с образцом в низкоуровневое представление.
+     * Преобразования программ из задачи про ADT, в низкоуровневое представление этой задачи. (По сути надо избавляться от алгебраических значений и сопоставления с образцом. Можно посмотреть алгоритм с матрицами [отсюда](https://www.researchgate.net/publication/2840783_Optimizing_Pattern_Matching) )
           * N.B. во всех задачах про OCaml, аргумент анонимной функции является так называемым паттерном (англ. pattern). Выражения там писать нельзя!
-	  </details>
-
+     </details>
 1. OCaml + GADT (2 человека)
    * mini-ML с функциями обычными и анонимными, замыканиями и рекурсией
    * OCaml где алгебраические типы заменены на обобщенные (generalized) алгебраические типы
    * Интерпретатор будет такой же, как в задаче про обычные алгебраические типы (можно делать вместе)
    * Вывод/проверка типов там сложнее, чем для обычных алгебраических, поэтому два человека
-	   * Нужно поддержать явные аннотации типов, потому что автоматический вывод типов всё
-	   * Типовые переменные могут убегать из области видимости и т.д.
+      * Нужно поддержать явные аннотации типов, потому что автоматический вывод типов всё
+      * Типовые переменные могут убегать из области видимости и т.д.
    * [Умная сслыка, описывающая что примерно вас ждет](https://ocaml.org/releases/4.12/manual/gadts.html)
 1.
 1. OCaml + модули (2 человека) <details><summary>Подробнее</summary>
-	 * MiniML c базовыми типами, (целые числа, строки) и стандартными алгебраическими (option, list)
-	 * Объявления типов-синонимов (type abbreviations, typedef)
-			 `type ('a, 'b) my_typ = 'a * ('b, 'b) list`
-			 * пользовательские алгебраические типы не надо
-	 * Объявления модулей и типов модулей
-		  * Многофайловость не надо
-		  * `let module X = ... in ` не надо
-		  * Функторы не надо (может потом про них отдельную задаче сделаю)
-	 * Передача модулей как first-class values в функции
-	   Пример:
+    * MiniML c базовыми типами, (целые числа, строки) и стандартными алгебраическими (option, list)
+    * Объявления типов-синонимов (type abbreviations, typedef)
+          `type ('a, 'b) my_typ = 'a * ('b, 'b) list`
+          * пользовательские алгебраические типы не надо
+    * Объявления модулей и типов модулей
+        * Многофайловость не надо
+        * `let module X = ... in ` не надо
+        * Функторы не надо (может потом про них отдельную задаче сделаю)
+    * Передача модулей как first-class values в функции
+      Пример:
 
      ```ocaml
      # module type SHOW = sig type t  val show : t -> string end;;
@@ -291,18 +325,15 @@
    + Value restiction
      * Заставляет выводить менее полиморфные типы, потому что присваивание может нарушать типовую безопасность
      * https://users.cs.fiu.edu/~smithg/cop4555/valrestr.html
-	 </details>
-1. SML + Value polymorphism restriction + rank 1 typing <details><summary>Подробнее</summary>
-	*  https://smlsharp.github.io/en/documents/4.0.0/Ch9.S2.html
-   </details>
+    </details>
 1. Haskell + custom operators
     * MiniML c поддержкой пользовательских операций, назначением им приоритетов и ассоциативности.
 
-	```haskell
-	infixl 6 -
-	infixr 5 :
-	infix  4 ==
-	```
+   ```haskell
+   infixl 6 -
+   infixr 5 :
+   infix  4 ==
+   ```
 
     * Халява. Кастомные операции в интерпретаторе, а в остальном только усложнение парсера.
     * Если сложно поддерживать синтаксис хаскеля, то можно сделать синтаксис камла с расширением операциями задания ассоциативности/приоритетов.
@@ -411,7 +442,7 @@
       * Ассоциативные надо, инициализацию сделайте какую-нить одну из двух видов
         * name=(key1 value1 key2 value2 ... )
         * name=( [key1]=value1 [key2]=value2 ...)
-	</details>
+   </details>
 1. [Cypher](https://neo4j.com/developer/cypher)
    * мини-язык для доступа к графовым базам данных
    * простой парсер, простой интепретатор, который исполняет запросоы на конкретных графах
@@ -457,11 +488,11 @@
     * Исключения
         + Пользователь может наследоваться от класса Exception и объявлять свои исключения без новых методов внутри. Получатся какие-то супер-сокращенные объекты с иерархией наследования высоты 2 и синтаксисом [на подобие record'ов](https://diary-of-programmer.blogspot.com/2020/11/finally-c-9-record-equivalent-of-scalas.html). Короче, полноценные объекты не надо.
 
-		        public class Person : Exception {
-		          public string FirstName {get; init;}
-		          public string LastName {get; init;}
-		        }
-		        var a = new Person { FirstName = "Michael", LastName = "Page" };
+              public class Person : Exception {
+                public string FirstName {get; init;}
+                public string LastName {get; init;}
+              }
+              var a = new Person { FirstName = "Michael", LastName = "Page" };
         + Исключения должны уметь выдавать backtrace c именами функий и позциями в файле, где они вызывались. С этим скорее всего придется запариться
         + Фильтры исключений, которые я просил в том году у Мирошникова -- не надо.
     * Какой-нибудь тайпчекер на случай, чтобы отфильтровывать бредовые программы
@@ -484,32 +515,7 @@
    * Интерпретатор запросок на этом языке
    * Эти запросы должны исполняться на больших данных, автогенеренных с помощью https://github.com/NetApp/SQL_Storage_Benchmark
    * Большие входы должны заставить интерпретатор исполняться запросы эффективно, а не как попало.
-1. Моделирование параллельного исполнения <details><summary>Подробнее</summary>
-	 За описание благодарите старшего студента.
-	 * Ast
-	    Программа состоит из N параллельных участков. В них бывает арифметика, присваивание, thread-local registers (отдельный для каждого потока набор регистров, например EAX, EBX или r1, r2), shared variables (переменные в которые могут писать и из которых могут читать сразу несколько потоков), ветвления и барьеры чтения/записи.
-	 * Parser
-		  Код потока записывается в столбик, код разных потоков разделен с помощью значка |||. Потоки исполняются параллельно. Если нет идей как такое парсить, то попробуйте следующий способ. Научитесь парсить один конкретный поток по его индексу (нулевой, первый, …, N-1й), потом используя эту функцию распарсите все потоки по очереди и получите список распаршеных потоков.
-		  Пример кода на этом языке:
-	      ```
-	      x <-1   ||| y<-1
-	      smp_mb  ||| smp_mb
-        r1 <-y  ||| r2<-x
-	      ```
 
-		x,y это shared переменные. r1,r2 – локальные для потока регистры. smp_mb – барьер памяти. В этом примере 2 параллельных потока, в каждом потоке 3 инструкции.
-	 * **Интерпретатор**
-   Не стоит пугаться, на самом деле вы будете исполнять по одной инструкции за раз чередуя потоки из которых эта инструкция берётся. Модель же памяти будет влиять на операции чтения и записи: эффекты этих операций могут проявляться не в те моменты времени, как вам подсказывает интуиция, из-за этого возникают интересные поведения.
-   Отмечу, что интерпретатор должен осуществить всевозможные исполнения переданной ему на вход программы, с этим поможет монада List
-   * Описание моделей памяти:
-     * Sequential Consistency – простейшая модель, выбираете произвольный поток и исполняете в нем одну инструкцию. Повторяете пока есть неисполненные инструкции. Барьеры памяти в этой модели не оказывают эффекта на исполнение программы.
-      * TSO – модель памяти процессоров x86. Здесь возможны интересные поведения. Если в примере выше изначально в переменных x и y хранятся значения ноль, а также из кода будут удалены инструкции барьеров памяти (smp_mb), то возможны поведения, в которых после исполнения будет x == 0 и y == 0. При наличии барьеров памяти после исполнения хотя бы одна переменная всегда будет иметь значение один. Вообще этот код называется store buffering test о нём и не только о нём можно прочесть в статье a better x86 memory model.
-   * **Полезные материалы:**
-     * [Открытая лекция «weak memory models»](https://youtu.be/P4AnGeVFbzo?list=PLlb7e2G7aSpRgsZVTYYbpqiFrIcIpf8kp) от Антона Подкопаева. В CSC тоже были лекции на эту тему: [раз](https://www.youtube.com/watch?v=VcesAbhnGKU&list=PLlb7e2G7aSpQCPeKTcVBHJns_JOxrc_fT&index=11) и    [два](https://www.youtube.com/watch?v=kg0ZVbBdsMM&list=PLlb7e2G7aSpQCPeKTcVBHJns_JOxrc_fT&index=12).
-     * К двум лекциям от CSC необходимо добавить статью Memory Barriers: a Hardware View for Software Hackers ([http://www.puppetmastertrading.com/images/hwViewForSwHackers.pdf](http://www.puppetmastertrading.com/images/hwViewForSwHackers.pdf))
-     * Статья расскажет о том, что такое store buffer(write buffer) и как работают барьеры памяти. [A better x86 memory model: x86-TSO (extended version)](https://www.cl.cam.ac.uk/~pes20/weakmemory/x86tso-paper.pdf). В ней можно найти тесты (litmus tests) для модели x86 и проверить свой интерпретатор
-     * [СТАТЬЯ, КОТОРАЯ МЕНЯЕТ ВСЁ!](https://habr.com/ru/company/JetBrains-education/blog/523298/) После прочтения этой статьи в конце 3й недели работы над домашкой. Я за 2 часа удалил 2/3 своего кода и получил работающие модели. Поэтому я уверен, что она может сильно помочь, после того, как всё предыдущее будет изучено и что-то будет написано.
-     </details>
 3. Promela
 1. [Menhir](http://gallium.inria.fr/~fpottier/menhir/manual.pdf)  + рекурсивный спуск <details><summary>Подробнее</summary>
     * Такой своеобразный DSL для написания парсеров. По умолчанию он парсит LR-способом (вам не обязательно знать, что это такое)
@@ -523,123 +529,118 @@
     * **TODO** спросить у Семёна сгодится ли тут простой табличный анализатор
     </details>
 1. Make <details><summary>Подробнее</summary>
-	* Поддержать объявление и вызов функций make (скорее всего [вот этот пример](https://github.com/Kakadu/ocanren-perf/blob/master/Makefile) достаточно полный)
-	* Так как язык Makefileов выглядит достаточно просто, то надо еще реализовать клон make, который можно использовать как билд-систему. Протестировать сборку C и OCaml проектов клоном make
-	</details>
+   * Поддержать объявление и вызов функций make (скорее всего [вот этот пример](https://github.com/Kakadu/ocanren-perf/blob/master/Makefile) достаточно полный)
+   * Так как язык Makefileов выглядит достаточно просто, то надо еще реализовать клон make, который можно использовать как билд-систему. Протестировать сборку C и OCaml проектов клоном make
+   </details>
 1. Solidity (Шишкин)
-	- Стандартные типы и операции над ними (uint, bool, string, mapping, array)
-	- Функции (рекурсия)
-	- Модификаторы доступа (public, private)
-	- Переменные и константы
-	- require (возвращает ошибку и откатывает все изменения)
-	- if, for
-	- Интерактор позволяющий:
-		1. Вызывать public функции
-		1. Обращаться к public членам
-		1.  Изменять public члены
+   - Стандартные типы и операции над ними (uint, bool, string, mapping, array)
+   - Функции (рекурсия)
+   - Модификаторы доступа (public, private)
+   - Переменные и константы
+   - require (возвращает ошибку и откатывает все изменения)
+   - if, for
+   - Интерактор позволяющий:
+      1. Вызывать public функции
+      1. Обращаться к public членам
+      1.  Изменять public члены
 
-	<details><summary>Пример контракта</summary>
+   <details><summary>Пример контракта</summary>
 
-	```Solidity
-	contract Example {
+   ```Solidity
+   contract Example {
 
-		uint public value = 0;
-		function storeValue(uint x) public {
-			value = x;
-			require(value < 100, "Huge value");
-		}
+      uint public value = 0;
+      function storeValue(uint x) public {
+         value = x;
+         require(value < 100, "Huge value");
+      }
 
-		mapping(uint => uint) private cache;
-		function privateFib(uint arg) private returns (uint) {
-			if (arg == 0 || arg == 1) {
-				return 1;
-			}
-			uint current = cache[arg];
-			if (current == 0){
-				uint result = privateFib(arg - 1) + privateFib(arg - 2);
-				cache[arg] = result;
-				return result;
-			}
-			else {
-				return current;
-			}
-		}
+      mapping(uint => uint) private cache;
+      function privateFib(uint arg) private returns (uint) {
+         if (arg == 0 || arg == 1) {
+            return 1;
+         }
+         uint current = cache[arg];
+         if (current == 0){
+            uint result = privateFib(arg - 1) + privateFib(arg - 2);
+            cache[arg] = result;
+            return result;
+         }
+         else {
+            return current;
+         }
+      }
 
-		function fib(uint arg) public returns (uint) {
-			return privateFib(arg);
-		}
+      function fib(uint arg) public returns (uint) {
+         return privateFib(arg);
+      }
 
-		uint public constant arrSize = 10;
-		string[arrSize] private arr;
+      uint public constant arrSize = 10;
+      string[arrSize] private arr;
 
-		function storeInArr(uint start, uint stop, string calldata newValue) public {
-			for (uint i = start; i < stop; i++) {
-				require(i < arrSize, "Incorrect stop");
-				arr[i] = newValue;
-			}
-		}
+      function storeInArr(uint start, uint stop, string calldata newValue) public {
+         for (uint i = start; i < stop; i++) {
+            require(i < arrSize, "Incorrect stop");
+            arr[i] = newValue;
+         }
+      }
 
-		function readFromArr(uint index) public returns (string memory) {
-			require(index < arrSize);
-			return arr[index];
-		}
+      function readFromArr(uint index) public returns (string memory) {
+         require(index < arrSize);
+         return arr[index];
+      }
 
-	}
-	```
-	</details>
+   }
+   ```
+   </details>
 
-	<details><summary>Пример взаимодействия</summary>
+   <details><summary>Пример взаимодействия</summary>
 
-	```
-	~> myAwesomeSolidityInterpreter Example.sol
-	Example.sol successfully uploaded!
-	Available functions:
-		storeValue(uint)
-		loadValue() returns (uint)
-		fib(uint) returns (uint)
-		storeInArr(uint, uint, string)
-		readFromArr(uint) returns (string)
-	Available members:
-		value
-		arrSize
+   ```
+   ~> myAwesomeSolidityInterpreter Example.sol
+   Example.sol successfully uploaded!
+   Available functions:
+      storeValue(uint)
+      loadValue() returns (uint)
+      fib(uint) returns (uint)
+      storeInArr(uint, uint, string)
+      readFromArr(uint) returns (string)
+   Available members:
+      value
+      arrSize
 
-	> storeValue(10)
-	()
-	> value
-	10
-	> storeValue(101)
-	Reverted with: Huge value
-	> value
-	10
-	> fib(2)
-	2
-	> privateFib(2)
-	Reverted with: access denied
-	> unknownFunction()
-	Reverted with: unknown function
-	> unknownMember = 3
-	Reverted with: unknown member
-	> storeInArr(0, 3, "Haskell > OCaml")
-	()
-	> readFromArr(0)
-	Haskell > OCaml
-	> storeInArr(0, 12, "Haskell < OCaml")
-	Reverted with: Incorrect stop
-	> readFromArr(0)
-	Haskell > OCaml
-	> <Ctrl+D>
-	Bye-bye!
-	~>
-	```
-	</details>
+   > storeValue(10)
+   ()
+   > value
+   10
+   > storeValue(101)
+   Reverted with: Huge value
+   > value
+   10
+   > fib(2)
+   2
+   > privateFib(2)
+   Reverted with: access denied
+   > unknownFunction()
+   Reverted with: unknown function
+   > unknownMember = 3
+   Reverted with: unknown member
+   > storeInArr(0, 3, "Haskell > OCaml")
+   ()
+   > readFromArr(0)
+   Haskell > OCaml
+   > storeInArr(0, 12, "Haskell < OCaml")
+   Reverted with: Incorrect stop
+   > readFromArr(0)
+   Haskell > OCaml
+   > <Ctrl+D>
+   Bye-bye!
+   ~>
+   ```
+   </details>
 
 ##### Гробы, которые никто не возьмет
 
-1. Javascript
-   * Объекты, числа, строки, массивы
-   * Функции обычные и анонимные, замыкания, рекурсия
-   * Типичное для Javascript прототипное наследование
-   * Прикольные штуки из [WAT talk](https://www.destroyallsoftware.com/talks/wat)
 1. Java и generics (2 человека) <details><summary>Подробнее</summary>
    * целые числа (`float` не нужно)
    * рекурсия
@@ -658,32 +659,32 @@
    * из методов класса `Object` достаточно поддерживать `hashCode`, `equals` и `toString`
    * реализовать более точное указание generic параметров (например, `? super x` и т.п.)
       * если заработает проверка типов (нужно отдельно реализовать тайпчекер) и интерпретатор на вот такой программе, то будет круто
-	 ```java
-	 interface Z {}
-	 interface N<x> {}
-	 interface L<x> {}
-	 interface Qlr<x> {}
-	 interface Qrl<x> {}
-	 interface E<x> extends
-	    Qlr<N< ? super Qr< ? super E< ? super E<?super x>>>>>,
-	    Qrl<N< ?super Ql< ?super E< ?super E<?super x>>>>> {}
-	 interface Ql<x> extends
-	    L<N<?super Ql<?super L<?super N<?super x>>>>>,
-	    E<Qlr<?super N<?super x>>> {}
-	 interface Qr<x> extends
-	    L<N<?super Qr<?super L<?super N<?super x>>>>>,
-	    E<Qrl<?super N<?super x>>> {}
-	 class Main {
-	    L<?super N<?super
-	    L<?super N<?super
-	    L<?super N<?super
-	    E<?super E<?super Z>>>>>>>>
-		  doit( Qr<? super E<? super E<? super Z>>> v ) {
-			return v;
-	    }
-	 }
-	 ```
-	 </details>
+    ```java
+    interface Z {}
+    interface N<x> {}
+    interface L<x> {}
+    interface Qlr<x> {}
+    interface Qrl<x> {}
+    interface E<x> extends
+       Qlr<N< ? super Qr< ? super E< ? super E<?super x>>>>>,
+       Qrl<N< ?super Ql< ?super E< ?super E<?super x>>>>> {}
+    interface Ql<x> extends
+       L<N<?super Ql<?super L<?super N<?super x>>>>>,
+       E<Qlr<?super N<?super x>>> {}
+    interface Qr<x> extends
+       L<N<?super Qr<?super L<?super N<?super x>>>>>,
+       E<Qrl<?super N<?super x>>> {}
+    class Main {
+       L<?super N<?super
+       L<?super N<?super
+       L<?super N<?super
+       E<?super E<?super Z>>>>>>>>
+        doit( Qr<? super E<? super E<? super Z>>> v ) {
+         return v;
+       }
+    }
+    ```
+    </details>
 1.
 1. OCaml + implicits
    * В OCaml нет ad hoc полиморфизма (то, что вы знаете под термином overloading), поэтому многим хочется иметь в грядущей версии OCaml следующую штуку
