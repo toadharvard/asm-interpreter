@@ -39,7 +39,7 @@
 
     opam init --bare
     opam update
-    opam switch create SWITCHNAME --compiler=ocaml-variants.4.14.1+options,ocaml-option-flambda --yes
+    opam switch create SWITCHNAME --packages=ocaml-variants.4.14.1+options,ocaml-option-flambda --yes
 
 Перед этим можно удалить другие switch'и, если они есть, с помощью команды `opam switch remove SWITCHNAME`.
 
@@ -75,4 +75,3 @@
   * [DCO](https://github.com/apps/dco);
   * проходить тестирование.
 * В названии надо указать задачу, которую реализовывали, идентифицировать себя и курс.
-
