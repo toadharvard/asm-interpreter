@@ -37,7 +37,7 @@
 
 Для opam >= 2.1:
 
-    opam switch init --bare
+    opam init --bare
     opam update
     opam switch create SWITCHNAME --compiler=ocaml-variants.4.14.1+options,ocaml-option-flambda --yes
 
@@ -74,4 +74,5 @@
   * проверку, что автоформатирование через ocamlformat настроено и соблюдается;
   * [DCO](https://github.com/apps/dco);
   * проходить тестирование.
-* В названии надо указать зачу, которую реализовывали, идентифицировать себя и курс.
+* В названии надо указать задачу, которую реализовывали, идентифицировать себя и курс.
+
