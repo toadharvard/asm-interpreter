@@ -7,13 +7,11 @@ on:
     workflows: ["Build PR"]
     types:
       - completed
-  #pull_request:
-  #  branches:
-  #    - 'master'
 
 env:
   OPAMROOT: /home/user/.opam
-  OPAMYES: true
+  #OPAMYES: true
+  OPAMCONFIRMLEVEL: unsafe-yes
 jobs:
   upload_lints:
     runs-on: ubuntu-latest
@@ -72,7 +70,8 @@ jobs:
           echo "CI_REPO_OWNER = ${{ env.CI_REPO_OWNER }}"
 
       - run: >
-          opam reinstall reviewer --yes
+          opam pin add https://github.com/Kakadu/zanuda.git --no-action
+          opam reinstall reviewer
 
       - run: cat lints.rdjsonl
 
