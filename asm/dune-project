@@ -6,19 +6,19 @@
 
 (license LGPL-3.0-or-later)
 
-(authors "FIXME Vasya Pupkin")
+(authors "Vadim Yakshigulov")
 
-(maintainers "FIXME Vasya Pupkin")
+(maintainers "https://github.com/toadharvard")
 
-(bug_reports "FIXME where to put bug reports about the code")
+(bug_reports "https://github.com/toadharvard/asm-interpreter/issues")
 
-(homepage "FIXME Homepage")
+(homepage "https://github.com/toadharvard/asm-interpreter")
 
 (package
- (name Lambda) ; FIXME and regenerate .opam file using 'dune build @install'
- (synopsis "FIXME An interpreter for language")
+ (name Asm)
+ (synopsis "NASM assembly interpeter")
  (description
-  "FIXME. A longer description, for example, which are the most interesing features being supported, etc.")
+  "Nothing is supported... but in december...")
  (version 0.1)
  (depends
   dune
@@ -29,6 +29,5 @@
   bisect_ppx
   (odoc :with-doc)
   (ocamlformat :build)
-  ; base
-  ; After adding dependencies to 'dune' files and the same dependecies here too
-  ))
+  base
+ ))
