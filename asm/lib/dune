@@ -1,8 +1,8 @@
 (library
  (name asm_lib)
- (public_name Asm.Lib)
- (modules Ast Parser)
+ (public_name asm.lib)
+ (modules ast parser)
  (libraries base angstrom)
  (preprocess
   (pps ppx_expect ppx_deriving.show))
-(inline_tests))
+ (inline_tests))

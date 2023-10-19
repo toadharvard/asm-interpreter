@@ -15,7 +15,7 @@
 (homepage "https://github.com/toadharvard/asm-interpreter")
 
 (package
- (name Asm)
+ (name asm)
  (synopsis "NASM assembly interpeter")
  (description
   "Nothing is supported... but in december...")
