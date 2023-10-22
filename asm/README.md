@@ -8,8 +8,8 @@ Author: Vadim Yakshigulov (toadharvard@gmail.com)
 
 Features done (append only):
 
-- Nothing
+- parser, ast
 
 Features in progress (and TODOs):
 
-- TODO: parser, ast
+- TODO: improve parser and ast
