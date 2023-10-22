@@ -2,8 +2,9 @@
  (name demoParser)
  (modules demoParser)
  (public_name asm.demos)
- (libraries asm.lib stdio)(instrumentation
- (backend bisect_ppx)))
+ (libraries asm.lib stdio)
+ (instrumentation
+  (backend bisect_ppx)))
 
 (cram
  (deps ./demoParser.exe))

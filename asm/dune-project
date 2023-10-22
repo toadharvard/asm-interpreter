@@ -16,7 +16,7 @@
  (name asm)
  (synopsis "NASM assembly interpeter")
  (description
-  "Nothing is supported... but in december...")
+  "Something is supported... but in december...")
  (version 0.1)
  (depends
   dune

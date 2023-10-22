@@ -41,7 +41,8 @@ let string_of_reg s =
   | "rdi" -> i64 rdi
   | "rsp" -> i64 rsp
   | "rbp" -> i64 rbp
-  | s -> failwith ("Register name  " ^ s ^ " is not matched with constructor")
+  | s ->
+    failwith (String.concat " " [ "Register name"; s; "is not matched with constructor" ])
 ;;
 
 let mnemonics =
@@ -80,7 +81,8 @@ let string_of_mnemonic s =
   | "sub" -> sub
   | "cmp" -> cmp
   | "je" -> je
-  | s -> failwith ("Mnemonic name " ^ s ^ " is not matched with constructor")
+  | s ->
+    failwith (String.concat " " [ "Mnemonic name"; s; "is not matched with constructor" ])
 ;;
 
 let is_reseved name = List.mem name (regs @ mnemonics)
