@@ -276,6 +276,14 @@ jobs:
           name: coverage
           path: _coverage
 
+      - run: |
+          echo "LANG_NAME=$(cat _coverage/projectname.txt)" >> $GITHUB_ENV
+
+      - run: echo "${{ env.LANG_NAME }}"
+
+      - run: exit 1
+        if: ${{ (env.LANG_NAME == undefined) ||(env.LANG_NAME == null) || (env.LANG_NAME == '')  }}
+
       - name: Deploy coverage
         uses: peaceiris/actions-gh-pages@v3
         with:
