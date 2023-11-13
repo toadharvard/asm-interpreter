@@ -8,7 +8,7 @@ open Common
 open Register
 open Immediate
 
-let parse_lable_ref = labelref <$> label_name
+let parse_lable_ref = label_ref <$> label_name
 let parse_reg_32 = reg_32 <$> parse_32_register
 let parse_reg_64 = reg_64 <$> parse_64_register
 let parse_imm_a = imm_a <$> parse_immidiate

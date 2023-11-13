@@ -7,7 +7,6 @@ val is_reserved : string -> bool
 val is_end_of_line : char -> bool
 val is_decimal_digit : char -> bool
 val is_letter : char -> bool
-val is_label_char : char -> bool
 val space : unit Angstrom.t
 val spaces : unit Angstrom.t
 val trim : 'a Angstrom.t -> 'a Angstrom.t

@@ -11,9 +11,8 @@ let is_space = function
 ;;
 
 let is_reserved str =
-  let rec get_lowercase_names = function
-    | [] -> []
-    | (name, _) :: rest -> String.lowercase_ascii name :: get_lowercase_names rest
+  let get_lowercase_names desc =
+    List.map (fun (fst, _) -> String.lowercase_ascii fst) desc
   in
   let names =
     List.concat

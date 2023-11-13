@@ -8,7 +8,7 @@ open Directive
 open Angstrom
 open Operand
 
-let parse_label_decl = labeldecl <$> label_name <* char ':'
+let parse_label_decl = label_decl <$> label_name <* char ':'
 
 let parse_instruction =
   let gen_instruction mnemonic choices =

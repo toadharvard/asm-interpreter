@@ -27,4 +27,4 @@ let parse_decimal =
   <?> "parse_decimal"
 ;;
 
-let parse_immidiate = immint <$> (parse_hex <|> parse_decimal) <?> "parse_imm_int"
+let parse_immidiate = imm_int <$> (parse_hex <|> parse_decimal) <?> "parse_imm_int"

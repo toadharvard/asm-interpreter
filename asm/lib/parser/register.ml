@@ -37,9 +37,9 @@ let parse_64_register =
 let between_brackets parser = between (char '[') (char ']') parser <?> "between_brackets"
 
 let parse_32_register_ref =
-  between_brackets parse_32_register >>| registerref <?> "parse_32_register_ref"
+  between_brackets parse_32_register >>| register_ref <?> "parse_32_register_ref"
 ;;
 
 let parse_64_register_ref =
-  between_brackets parse_64_register >>| registerref <?> "parse_64_register_ref"
+  between_brackets parse_64_register >>| register_ref <?> "parse_64_register_ref"
 ;;
