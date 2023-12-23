@@ -119,12 +119,13 @@ let expr_char = take_whitespaces *> const_char >>| fun c -> Expr_const c
 
 let const_string =
   let rec helper acc =
-    any_char
+    Printf.printf "%s\n" acc;
+    peek_char_fail
     >>= fun c ->
     match c with
-    | '"' -> return acc
-    | '\\' -> any_char >>= fun t -> helper ((acc ^ "\\") ^ Base.Char.to_string t)
-    | _ -> helper (acc ^ Base.Char.to_string c)
+    | '"' -> advance 1 *> return acc
+    | '\\' -> take 2 >>= fun t -> helper (acc ^ t)
+    | _ -> take 1 >>= fun t -> helper (acc ^ t)
   in
   char '\"' *> helper "" >>| fun s -> String s
 ;;

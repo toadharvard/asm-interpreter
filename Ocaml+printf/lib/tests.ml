@@ -81,7 +81,7 @@ let%expect_test _ =
 
 (* temp test *)
 let%expect_test _ =
-  parse_and_print {|let x = "as\ndd"|};
+  parse_and_print "let x = \"as\ndd\"";
   [%expect {|
     [(Let_decl (false, (LCIdent "x"), (Expr_const (Char '\n'))))]|}]
 ;;

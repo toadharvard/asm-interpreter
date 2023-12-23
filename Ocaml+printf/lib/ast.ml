@@ -6,7 +6,7 @@ type const =
   | Int of int (** 1 *)
   | Bool of bool (** true *)
   | Char of char (** 'a' *)
-  | String of string (** "abc" *) (* TODO: implement parsing of {|asdada|}*)
+  | String of string (** "abc" *)
 [@@deriving eq, show { with_path = false }]
 
 type un_op =
