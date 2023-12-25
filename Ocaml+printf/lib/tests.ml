@@ -79,9 +79,43 @@ let%expect_test _ =
       ] |}]
 ;;
 
-(* temp test *)
 let%expect_test _ =
-  parse_and_print "let x = \"as\ndd\"";
-  [%expect {|
-    [(Let_decl (false, (LCIdent "x"), (Expr_const (Char '\n'))))]|}]
+  parse_and_print "let f = fun a b -> a + b";
+  [%expect
+    {|
+    [(Let_decl
+        (false, (LCIdent "f"),
+         (Expr_fun ((LCIdent "a"),
+            (Expr_fun ((LCIdent "b"),
+               (Bin_op (Add, (Expr_val (LCIdent "a")), (Expr_val (LCIdent "b"))))
+               ))
+            ))))
+      ] |}]
+;;
+
+let%expect_test _ =
+  parse_and_print "let f a = let rec add b c = \"asdasd\" + \"ad\na\" + c in add a 3";
+  [%expect
+    {|
+    [(Let_decl
+        (false, (LCIdent "f"),
+         (Expr_fun ((LCIdent "a"),
+            (Expr_let (
+               (true, (LCIdent "add"),
+                (Expr_fun ((LCIdent "b"),
+                   (Expr_fun ((LCIdent "c"),
+                      (Bin_op (Add,
+                         (Bin_op (Add, (Expr_const (String "asdasd")),
+                            (Expr_const (String "ad\na")))),
+                         (Expr_val (LCIdent "c"))))
+                      ))
+                   ))),
+               (Expr_app (
+                  (Expr_app ((Expr_val (LCIdent "add")), (Expr_val (LCIdent "a"))
+                     )),
+                  (Expr_const (Int 3))))
+               ))
+            ))))
+      ]
+   |}]
 ;;

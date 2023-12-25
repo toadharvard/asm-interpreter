@@ -119,7 +119,6 @@ let expr_char = take_whitespaces *> const_char >>| fun c -> Expr_const c
 
 let const_string =
   let rec helper acc =
-    Printf.printf "%s\n" acc;
     peek_char_fail
     >>= fun c ->
     match c with
@@ -242,6 +241,48 @@ let if_then_else expr_item_parser =
     <|> expr_item_parser)
 ;;
 
+(*TODO*)
+(* let parse_list expr = fix (fun current -> choice [ expr <* take_whitespaces <* char ']' ]) *)
+
+let expr_fun expr =
+  keyword "fun"
+  *> take_whitespaces1
+  *> fix (fun cur_parser ->
+    valname
+    >>= fun valname ->
+    choice
+      [ (take_whitespaces *> string "->" *> expr
+         >>| fun fun_expr -> Expr_fun (valname, fun_expr))
+      ; (take_whitespaces1 *> cur_parser >>| fun fun_expr -> Expr_fun (valname, fun_expr))
+      ])
+  <|> expr
+;;
+
+let let_in expr =
+  let fun_helper =
+    fix (fun cur_parser ->
+      valname
+      >>= fun valname ->
+      choice
+        [ (take_whitespaces *> char '=' *> expr
+           <* keyword "in"
+           >>| fun fun_expr -> Expr_fun (valname, fun_expr))
+        ; (take_whitespaces1 *> cur_parser >>| fun fun_expr -> Expr_fun (valname, fun_expr)
+          )
+        ])
+  in
+  keyword "let"
+  *> lift4
+       (fun rec_flag name expr1 expr2 -> Expr_let ((rec_flag, name, expr1), expr2))
+       (option false (whitespace1_keyword "rec" >>| fun s -> String.equal s "rec"))
+       (take_whitespaces1 *> valname)
+       (take_whitespaces *> op_parse_helper "=" *> expr
+        <* keyword "in"
+        <|> take_whitespaces1 *> fun_helper)
+       expr
+  <* take_whitespaces
+;;
+
 let expr =
   fix (fun cur_expr ->
     let cur_expr =
@@ -263,10 +304,11 @@ let expr =
     let cur_expr = chainr1 cur_expr and_op in
     let cur_expr = chainr1 cur_expr or_op in
     let cur_expr = if_then_else cur_expr in
+    let cur_expr = let_in cur_expr <|> expr_fun cur_expr in
     cur_expr)
 ;;
 
-let fun_args =
+let let_fun =
   fix (fun cur_parser ->
     valname
     >>= fun valname ->
@@ -283,7 +325,7 @@ let decl =
        (fun rec_flag name expr -> Let_decl (rec_flag, name, expr))
        (option false (whitespace1_keyword "rec" >>| fun s -> String.equal s "rec"))
        (take_whitespaces1 *> valname)
-       (take_whitespaces *> op_parse_helper "=" *> expr <|> take_whitespaces1 *> fun_args)
+       (take_whitespaces *> op_parse_helper "=" *> expr <|> take_whitespaces1 *> let_fun)
   <* take_whitespaces
   <* option "" (string ";;")
 ;;
