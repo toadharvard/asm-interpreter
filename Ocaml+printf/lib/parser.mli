@@ -4,3 +4,5 @@
 
 (** creates AST from text of program *)
 val parse_program : string -> (Ast.program, string) result
+
+val parse_expression : string -> (Ast.expr, string) result

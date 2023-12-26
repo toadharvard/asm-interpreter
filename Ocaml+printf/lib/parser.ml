@@ -251,7 +251,7 @@ let expr_fun expr =
     valname
     >>= fun valname ->
     choice
-      [ (take_whitespaces *> string "->" *> expr
+      [ (take_whitespaces *> op_parse_helper "->" *> expr
          >>| fun fun_expr -> Expr_fun (valname, fun_expr))
       ; (take_whitespaces1 *> cur_parser >>| fun fun_expr -> Expr_fun (valname, fun_expr))
       ])
@@ -264,7 +264,7 @@ let let_in expr =
       valname
       >>= fun valname ->
       choice
-        [ (take_whitespaces *> char '=' *> expr
+        [ (take_whitespaces *> op_parse_helper "=" *> expr
            <* keyword "in"
            >>| fun fun_expr -> Expr_fun (valname, fun_expr))
         ; (take_whitespaces1 *> cur_parser >>| fun fun_expr -> Expr_fun (valname, fun_expr)
@@ -284,7 +284,8 @@ let let_in expr =
 ;;
 
 let expr =
-  fix (fun cur_expr ->
+  take_whitespaces
+  *> fix (fun cur_expr ->
     let cur_expr =
       choice
         [ expr_integer
@@ -313,7 +314,7 @@ let let_fun =
     valname
     >>= fun valname ->
     choice
-      [ (take_whitespaces *> char '=' *> expr
+      [ (take_whitespaces *> op_parse_helper "=" *> expr
          >>| fun fun_expr -> Expr_fun (valname, fun_expr))
       ; (take_whitespaces1 *> cur_parser >>| fun fun_expr -> Expr_fun (valname, fun_expr))
       ])
@@ -336,3 +337,4 @@ let program_parser : program t =
 ;;
 
 let parse_program s = parse_string ~consume:All program_parser s
+let parse_expression s = parse_string ~consume:All expr s

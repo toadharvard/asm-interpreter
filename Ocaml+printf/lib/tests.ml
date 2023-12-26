@@ -9,7 +9,7 @@ let parse_and_print str =
 ;;
 
 let%expect_test _ =
-  parse_and_print "  ;; ;;;;   ;; ;;let _a=1;; ;;;; let   _b =1+2  ";
+  parse_and_print {|  ;; ;;;;   ;; ;;let _a=1;; ;;;; let   _b =1+2  |};
   [%expect
     {|
     [(Let_decl (false, (LCIdent "_a"), (Expr_const (Int 1))));
@@ -20,7 +20,7 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  parse_and_print "let abcde a  b  c  d  e   =1     ";
+  parse_and_print {|let abcde a  b  c  d  e   =1     |};
   [%expect
     {|
     [(Let_decl
@@ -37,7 +37,7 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  parse_and_print "let a =  10/( 2+(+ +5) )*( 7 + - 1) - ( 1 + 2*  3 ) ";
+  parse_and_print {|let a =  10/( 2+(+ +5) )*( 7 + - 1) - ( 1 + 2*  3 ) |};
   [%expect
     {|
     [(Let_decl
@@ -59,7 +59,7 @@ let%expect_test _ =
 
 (* factorial *)
 let%expect_test _ =
-  parse_and_print "let rec fac n = if n <= 1 then 1 else n * fac (n - 1)";
+  parse_and_print {|let rec fac n = if n <= 1 then 1 else n * fac (n - 1)|};
   [%expect
     {|
     [(Let_decl
@@ -80,7 +80,7 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  parse_and_print "let f = fun a b -> a + b";
+  parse_and_print {|let f = fun a b -> a + b|};
   [%expect
     {|
     [(Let_decl
