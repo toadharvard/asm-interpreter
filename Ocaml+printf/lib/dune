@@ -1,7 +1,7 @@
 (library
  (name ocaml_printf_lib)
  (public_name Ocaml+printf.Lib)
- (modules Ast Parser)
+ (modules Ast Parser Typedtree Inferencer)
  (libraries base stdlib angstrom)
  (inline_tests)
  (preprocess
@@ -18,3 +18,8 @@
   (pps ppx_expect ppx_deriving.show))
  (instrumentation
   (backend bisect_ppx)))
+
+(env
+ (dev
+  (flags
+   (:standard -w -32-33-66-39-26 -warn-error -27))))
