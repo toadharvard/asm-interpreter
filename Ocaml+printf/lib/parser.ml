@@ -41,7 +41,8 @@ let is_keyword = function
   | "or"
   | "rec"
   | "then"
-  | "true" -> true
+  | "true"
+  | "with" -> true
   | _ -> false
 ;;
 
@@ -214,6 +215,12 @@ let concat_op =
   take_whitespaces *> op_parse_helper "^" *> return (fun e1 e2 -> Bin_op (Concat, e1, e2))
 ;;
 
+let list_cons_op =
+  take_whitespaces
+  *> op_parse_helper "::"
+  *> return (fun e1 e2 -> Expr_cons_list (e1, e2))
+;;
+
 let chainl1 e op =
   let rec go acc = lift2 (fun f x -> f acc x) op e >>= go <|> return acc in
   e >>= fun init -> go init
@@ -232,43 +239,113 @@ let unary_op expr_item_parser =
 ;;
 
 let if_then_else expr_item_parser =
-  fix (fun cur_expr ->
-    lift3
-      (fun e1 e2 e3 -> Expr_ite (e1, e2, e3))
-      (keyword "if" *> cur_expr)
-      (keyword "then" *> cur_expr)
-      (keyword "else" *> cur_expr)
-    <|> expr_item_parser)
+  lift3
+    (fun e1 e2 e3 -> Expr_ite (e1, e2, e3))
+    (keyword "if" *> expr_item_parser)
+    (keyword "then" *> expr_item_parser)
+    (keyword "else" *> expr_item_parser)
 ;;
 
-(*TODO*)
-(* let parse_list expr = fix (fun current -> choice [ expr <* take_whitespaces <* char ']' ]) *)
+let parse_tuple expr =
+  expr
+  >>= (fun first_expr ->
+        many1 (take_whitespaces *> char ',' *> expr)
+        >>| fun expr_list -> first_expr :: expr_list)
+  >>| (fun expr_list -> Expr_tuple expr_list)
+  <|> expr
+;;
+
+let parse_list expr =
+  let parse_empty =
+    take_whitespaces *> char '[' *> take_whitespaces *> char ']'
+    >>| fun _ -> Expr_empty_list
+  in
+  parse_empty
+  <|> take_whitespaces
+      *> char '['
+      *> fix (fun cur_parser ->
+        choice
+          [ (expr
+             <* take_whitespaces
+             <* char ']'
+             >>| fun e -> Expr_cons_list (e, Expr_empty_list))
+          ; (expr
+             <* take_whitespaces
+             <* char ';'
+             >>= fun e -> cur_parser >>| fun l -> Expr_cons_list (e, l))
+          ])
+;;
+
+let parse_any_pat = take_whitespaces *> char '_' >>| fun _ -> Pat_any
+let parse_val_pat = take_whitespaces *> valname >>| fun s -> Pat_val s
+
+let parse_const_pat =
+  let parse_const = choice [ const_integer; const_bool; const_char; const_string ] in
+  take_whitespaces *> parse_const >>| fun c -> Pat_const c
+;;
+
+let parse_pat_empty_list =
+  take_whitespaces *> char '[' *> take_whitespaces *> char ']' >>| fun _ -> Pat_empty_list
+;;
+
+let parse_pat =
+  take_whitespaces
+  *> fix (fun cur_pat ->
+    let parse_base_pat =
+      choice [ parse_any_pat; parse_val_pat; parse_const_pat; parse_pat_empty_list ]
+    in
+    let parse_cons_pat =
+      let helper =
+        take_whitespaces
+        *> op_parse_helper "::"
+        *> return (fun p1 p2 -> Pat_cons_list (p1, p2))
+      in
+      chainr1 (parenthesis cur_pat <|> parse_base_pat) helper
+    in
+    let parse_tuple_pat =
+      parenthesis cur_pat
+      <|> parse_base_pat
+      >>= (fun first_pat ->
+            many1
+              (take_whitespaces *> char ',' *> (parenthesis cur_pat <|> parse_base_pat))
+            >>| fun pat_list -> first_pat :: pat_list)
+      >>| fun pat_list -> Pat_tuple pat_list
+    in
+    choice [ parenthesis cur_pat; parse_tuple_pat; parse_cons_pat; parse_base_pat ])
+;;
+
+let expr_match expr =
+  let case =
+    take_whitespaces *> char '|' *> parse_pat
+    >>= fun pat -> take_whitespaces *> op_parse_helper "->" *> expr >>| fun e -> pat, e
+  in
+  keyword "match" *> expr
+  >>= fun e -> keyword "with" *> many1 case >>| fun l -> Expr_match (e, l)
+;;
 
 let expr_fun expr =
   keyword "fun"
   *> take_whitespaces1
   *> fix (fun cur_parser ->
-    valname
-    >>= fun valname ->
+    parse_pat
+    >>= fun pat ->
     choice
       [ (take_whitespaces *> op_parse_helper "->" *> expr
-         >>| fun fun_expr -> Expr_fun (valname, fun_expr))
-      ; (take_whitespaces1 *> cur_parser >>| fun fun_expr -> Expr_fun (valname, fun_expr))
+         >>| fun fun_expr -> Expr_fun (pat, fun_expr))
+      ; (take_whitespaces1 *> cur_parser >>| fun fun_expr -> Expr_fun (pat, fun_expr))
       ])
-  <|> expr
 ;;
 
 let let_in expr =
   let fun_helper =
     fix (fun cur_parser ->
-      valname
-      >>= fun valname ->
+      parse_pat
+      >>= fun pat ->
       choice
         [ (take_whitespaces *> op_parse_helper "=" *> expr
            <* keyword "in"
-           >>| fun fun_expr -> Expr_fun (valname, fun_expr))
-        ; (take_whitespaces1 *> cur_parser >>| fun fun_expr -> Expr_fun (valname, fun_expr)
-          )
+           >>| fun fun_expr -> Expr_fun (pat, fun_expr))
+        ; (take_whitespaces1 *> cur_parser >>| fun fun_expr -> Expr_fun (pat, fun_expr))
         ])
   in
   keyword "let"
@@ -280,43 +357,50 @@ let let_in expr =
         <* keyword "in"
         <|> take_whitespaces1 *> fun_helper)
        expr
-  <* take_whitespaces
 ;;
 
 let expr =
   take_whitespaces
-  *> fix (fun cur_expr ->
+  *> fix (fun all_expr ->
     let cur_expr =
       choice
         [ expr_integer
-        ; expr_valname
         ; expr_bool
         ; expr_char
         ; expr_string
-        ; parenthesis cur_expr
+        ; expr_valname
+        ; parse_list all_expr
+        ; parenthesis all_expr
         ]
     in
     let cur_expr = chainl1 cur_expr (return (fun e1 e2 -> Expr_app (e1, e2))) in
     let cur_expr = unary_op cur_expr in
     let cur_expr = chainl1 cur_expr (mul <|> div) in
     let cur_expr = chainl1 cur_expr (add <|> sub) in
+    let cur_expr = chainr1 cur_expr list_cons_op in
     let cur_expr = chainl1 cur_expr concat_op in
     let cur_expr = chainl1 cur_expr rel in
     let cur_expr = chainr1 cur_expr and_op in
     let cur_expr = chainr1 cur_expr or_op in
-    let cur_expr = if_then_else cur_expr in
-    let cur_expr = let_in cur_expr <|> expr_fun cur_expr in
-    cur_expr)
+    let cur_expr = parse_tuple cur_expr in
+    choice
+      [ if_then_else all_expr
+      ; let_in all_expr
+      ; expr_match all_expr
+      ; expr_fun all_expr
+      ; cur_expr
+      ])
+  <* take_whitespaces
 ;;
 
 let let_fun =
   fix (fun cur_parser ->
-    valname
-    >>= fun valname ->
+    parse_pat
+    >>= fun pat ->
     choice
       [ (take_whitespaces *> op_parse_helper "=" *> expr
-         >>| fun fun_expr -> Expr_fun (valname, fun_expr))
-      ; (take_whitespaces1 *> cur_parser >>| fun fun_expr -> Expr_fun (valname, fun_expr))
+         >>| fun fun_expr -> Expr_fun (pat, fun_expr))
+      ; (take_whitespaces1 *> cur_parser >>| fun fun_expr -> Expr_fun (pat, fun_expr))
       ])
 ;;
 

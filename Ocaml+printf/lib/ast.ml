@@ -2,6 +2,8 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
+(* TODO: format types*)
+
 type const =
   | Int of int (** 1 *)
   | Bool of bool (** true *)
@@ -28,7 +30,6 @@ type bin_op =
   | And (** && *)
   | Or (** || *)
   | Concat (** ^ *)
-  | Get_index (** s.[i] *)
 [@@deriving eq, show { with_path = false }]
 
 type val_name = LCIdent of string (** variable_name1 *)
@@ -40,7 +41,7 @@ type pattern =
   | Pat_const of const (** 1 *)
   | Pat_tuple of pattern list (** (1, 2) *)
   | Pat_cons_list of pattern * pattern (* 1::[] or [1;2] *)
-  | Pat_empty_list (* []*)
+  | Pat_empty_list (* [] *)
 [@@deriving eq, show { with_path = false }]
 
 type expr =
@@ -48,13 +49,11 @@ type expr =
   | Un_op of un_op * expr (** -1 *)
   | Bin_op of bin_op * expr * expr (** 2 + 2 *)
   | Expr_val of val_name (** val1 *)
-  | Expr_ite of expr * expr * expr (** if a then b else c *)
-  | Expr_fun of val_name * expr
-  (** Named function when declaring like [let inc x = x + 1] *)
-  (* TODO: change val_name *)
+  | Expr_ite of expr * expr * expr (** if a then b else c *) (* TODO: change val_name *)
+  | Expr_fun of pattern * expr (** fun x -> x + 1 *)
   | Expr_app of expr * expr (** f x *)
   | Expr_let of decl * expr (** let a = 1 in b *)
-  | Expr_match of expr * (pattern * expr list) (** match x with | 1 -> 0 | _ -> 1 *)
+  | Expr_match of expr * (pattern * expr) list (** match x with | 1 -> 0 | _ -> 1 *)
   | Expr_empty_list (** [] *)
   | Expr_cons_list of expr * expr (* 1::[] or [1;2] *)
   | Expr_tuple of expr list
