@@ -63,9 +63,10 @@ let whitespace1_keyword s =
 let valname =
   token1
   >>= (fun s ->
-        match s.[0] with
-        | c when (not (is_keyword s)) && (is_low_letter c || c = '_') -> return s
-        | _ -> fail "name of value expected")
+        let c = s.[0] in
+        if (not (is_keyword s)) && s <> "_" && (is_low_letter c || c = '_')
+        then return s
+        else fail "name of value expected")
   >>| fun s -> LCIdent s
 ;;
 
