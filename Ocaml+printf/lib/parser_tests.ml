@@ -143,24 +143,25 @@ let%expect_test _ =
   parse_and_print "let a =5::4::[1; 2; 3]";
   [%expect
     {|
-    [(Let_decl
-        (false, (LCIdent "a"),
-         (Expr_cons_list ((Expr_const (Int 5)),
-            (Expr_cons_list ((Expr_const (Int 4)),
-               (Expr_cons_list ((Expr_const (Int 1)),
-                  (Expr_cons_list ((Expr_const (Int 2)),
-                     (Expr_cons_list ((Expr_const (Int 3)), Expr_empty_list))))
-                  ))
-               ))
-            ))))
-      ] |}]
+      [(Let_decl
+          (false, (LCIdent "a"),
+           (Expr_cons_list ((Expr_const (Int 5)),
+              (Expr_cons_list ((Expr_const (Int 4)),
+                 (Expr_cons_list ((Expr_const (Int 1)),
+                    (Expr_cons_list ((Expr_const (Int 2)),
+                       (Expr_cons_list ((Expr_const (Int 3)), Expr_empty_list))))
+                    ))
+                 ))
+              ))))
+        ] |}]
 ;;
 
 let%expect_test _ =
   parse_and_print
     "let f x = match x with | h::tl -> let x = 1 in x | _ -> let id = fun x -> x in if \
      (0 < 1) then 2 else id 3";
-  [%expect {|
+  [%expect
+    {|
     [(Let_decl
         (false, (LCIdent "f"),
          (Expr_fun ((Pat_val (LCIdent "x")),
@@ -185,5 +186,28 @@ let%expect_test _ =
                  ]
                ))
             ))))
+      ] |}]
+;;
+
+let%expect_test _ =
+  parse_and_print "let k = let f ((t::1::(1,2)::y), 3) = a in f";
+  [%expect {|
+    [(Let_decl
+        (false, (LCIdent "k"),
+         (Expr_let (
+            (false, (LCIdent "f"),
+             (Expr_fun (
+                (Pat_tuple
+                   [(Pat_cons_list ((Pat_val (LCIdent "t")),
+                       (Pat_cons_list ((Pat_const (Int 1)),
+                          (Pat_cons_list (
+                             (Pat_tuple
+                                [(Pat_const (Int 1)); (Pat_const (Int 2))]),
+                             (Pat_val (LCIdent "y"))))
+                          ))
+                       ));
+                     (Pat_const (Int 3))]),
+                (Expr_val (LCIdent "a"))))),
+            (Expr_val (LCIdent "f"))))))
       ] |}]
 ;;

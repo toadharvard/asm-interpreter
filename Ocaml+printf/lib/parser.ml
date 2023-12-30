@@ -312,7 +312,7 @@ let parse_pat =
             >>| fun pat_list -> first_pat :: pat_list)
       >>| fun pat_list -> Pat_tuple pat_list
     in
-    choice [ parenthesis cur_pat; parse_tuple_pat; parse_cons_pat; parse_base_pat ])
+    choice [ parse_tuple_pat; parse_cons_pat; parse_base_pat; parenthesis cur_pat ])
 ;;
 
 let expr_match expr =
@@ -360,6 +360,22 @@ let let_in expr =
        expr
 ;;
 
+let get_by_id expr =
+  expr
+  >>= (fun str ->
+        take_whitespaces *> char '.' *> take_whitespaces *> char '[' *> expr
+        >>= fun id ->
+        take_whitespaces *> char ']'
+        >>| fun _ -> Expr_app (Expr_app (Expr_val (LCIdent "get"), str), id))
+  <|> expr
+;;
+
+let seq_op = take_whitespaces *> char ';' *> return (fun e1 e2 -> Expr_seq (e1, e2))
+
+(* let expr_seq expr =
+   expr <* take_whitespaces <* char ';' >>= fun e1 -> expr >>| fun e2 -> Expr_seq (e1, e2)
+   ;; *)
+
 let expr =
   take_whitespaces
   *> fix (fun all_expr ->
@@ -370,10 +386,11 @@ let expr =
         ; expr_char
         ; expr_string
         ; expr_valname
-        ; parse_list all_expr
         ; parenthesis all_expr
         ]
     in
+    let cur_expr = parse_list cur_expr <|> cur_expr in
+    let cur_expr = get_by_id cur_expr in
     let cur_expr = chainl1 cur_expr (return (fun e1 e2 -> Expr_app (e1, e2))) in
     let cur_expr = unary_op cur_expr in
     let cur_expr = chainl1 cur_expr (mul <|> div) in
@@ -386,6 +403,7 @@ let expr =
     let cur_expr = parse_tuple cur_expr in
     choice
       [ if_then_else all_expr
+      ; chainr1 cur_expr seq_op
       ; let_in all_expr
       ; expr_match all_expr
       ; expr_fun all_expr
