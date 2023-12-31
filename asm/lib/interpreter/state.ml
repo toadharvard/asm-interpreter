@@ -40,10 +40,11 @@ module GlobalState = struct
     }
 
   let initialize_registers_with filter_fn value =
+    let add_to_map map (key, value) = StringMap.add key value map in
     Variants_of_register.descriptions
     |> List.filter (fun (name, _) -> filter_fn name)
     |> List.map (fun (name, _) -> name, value)
-    |> StringMap.of_list
+    |> List.fold_left add_to_map StringMap.empty
   ;;
 
   let initialize_registers =
@@ -176,4 +177,6 @@ let write_carry_flag value =
   update (fun state -> return { state with carry_flag = value })
 ;;
 
-let write_exit_code code =  update (fun state -> return { state with exit_code = Some code })
+let write_exit_code code =
+  update (fun state -> return { state with exit_code = Some code })
+;;
