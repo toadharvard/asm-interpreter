@@ -69,7 +69,7 @@ type expr =
   | Expr_fstring of fstring (* "abc%d %c" *)
 [@@deriving eq, show { with_path = false }]
 
-and decl = bool * val_name * expr
+and decl = bool * pattern * expr
 
 type let_decl = Let_decl of decl (** [let x = 1] *)
 [@@deriving eq, show { with_path = false }]

@@ -6,6 +6,7 @@ open Typedtree
 
 (* for printing *)
 
+(* TODO : make pretty *)
 let rec pp_typ ppf = function
   | TVar n -> Format.fprintf ppf "'_%d" n
   | TPrim s -> Format.fprintf ppf "%s" s
@@ -30,6 +31,8 @@ let pp_scheme ppf = function
 
 (* end printing *)
 
+(* TODO : rebuild ast (pre-infer) *)
+(* it is used after parsing but before main type inference to replace string literals *)
 let convert_to_format s =
   let rec helper acc j =
     match String.rindex_from_opt s j '%' with
@@ -75,7 +78,7 @@ let pp_error ppf : error -> _ = function
   | `Pattern_matching (l, r) ->
     Format.fprintf
       ppf
-      "Incorrect pattern mathing, expected %a, found %a"
+      "Incorrect pattern matching, expected %a, found %a"
       pp_typ
       l
       pp_typ
@@ -114,6 +117,9 @@ end = struct
   (* A compositon: State monad after Result monad *)
   type 'a t = int -> int * ('a, error) Result.t
 
+  let return x state = state, Base.Result.return x
+  let fail e st = st, Base.Result.fail e
+
   let ( >>= ) : 'a 'b. 'a t -> ('a -> 'b t) -> 'b t =
     fun m f st ->
     let state, r = m st in
@@ -122,8 +128,6 @@ end = struct
     | Ok a -> f a state
   ;;
 
-  let fail e st = st, Base.Result.fail e
-  let return x state = state, Base.Result.return x
   let bind x ~f = x >>= f
 
   let ( >>| ) : 'a 'b. 'a t -> ('a -> 'b) -> 'b t =
@@ -134,7 +138,7 @@ end = struct
   ;;
 
   module Syntax = struct
-    let ( let* ) x f = bind x ~f (* let* x f ---> x >>= f ---> x >>= fun a -> f a *)
+    let ( let* ) x f = bind x ~f
   end
 
   module RMap = struct
@@ -162,16 +166,14 @@ end = struct
     ;;
   end
 
-  let fresh : int t = fun last -> last + 1, Result.Ok last
-
-  (* (m : int -> int * ('a, error) Result.t) : ('a, error) Result.t*)
+  let fresh last = last + 1, Result.Ok last
   let run m = snd (m 2)
 end
 
 type fresh = int
 
 module Type = struct
-  (* Проверяем, что первое типизированная переменная v не встречается во типе *)
+  (* Проверяем, что типизированная переменная v не встречается во типе *)
   let rec occurs_in v = function
     | TVar b -> b = v
     | TArr (l, r) -> occurs_in v l || occurs_in v r
@@ -204,7 +206,7 @@ module Subst : sig
   val pp_subst : Stdlib.Format.formatter -> t -> unit
   val empty : t
   val singleton : fresh -> typ -> t R.t
-  val find : t -> fresh -> typ option
+  val remove : t -> fresh -> t
   val apply : t -> typ -> typ
   val unify : typ -> typ -> t R.t
 
@@ -212,7 +214,6 @@ module Subst : sig
   val compose : t -> t -> t R.t
 
   val compose_all : t list -> t R.t
-  val remove : t -> fresh -> t
 end = struct
   open R
   open R.Syntax
@@ -232,9 +233,7 @@ end = struct
   (* создаем список из одной подстановки *)
   let singleton k v =
     if Type.occurs_in k v
-    then (
-      Stdlib.Format.printf "%d = %a\n" k pp_typ v;
-      fail `Occurs_check)
+    then fail `Occurs_check
     else return (Map.singleton (module Int) k v)
   ;;
 
@@ -245,10 +244,10 @@ end = struct
      список: 'a = int, 'b = bool
      получим int -> bool
      применяем список замен к типу, s - наш список *)
-  let apply s =
+  let apply sub =
     let rec helper = function
       | TVar tv as ty ->
-        (match find s tv with
+        (match find sub tv with
          (* не нашли - оставляем как есть *)
          | None -> ty
          (* нашли - меняем *)
@@ -287,7 +286,6 @@ end = struct
     | TFString t1, TFString t2 -> unify t1 t2
     | _ -> fail (`Unification_failed (l, r))
 
-  (* расширяем список одной заменой *)
   and extend sub typ_var ty =
     match Map.find sub typ_var with
     | None ->
@@ -303,7 +301,6 @@ end = struct
       let* sub2 = unify ty finded_type in
       compose sub sub2
 
-  (* объединяет два списка замен *)
   and compose s1 s2 = RMap.fold s2 ~init:(return s1) ~f:extend
 
   let compose_all ss = RList.fold_left ss ~init:(return empty) ~f:compose
@@ -311,9 +308,7 @@ end
 
 module Scheme = struct
   (* реально свободные переменные, то есть которые не связаны binder_set-ом *)
-  let free_vars = function
-    | Scheme (bind_set, t) -> TypeVarSet.diff (Type.type_vars t) bind_set
-  ;;
+  let free_vars (Scheme (bind_set, t)) = TypeVarSet.diff (Type.type_vars t) bind_set
 
   (* непонятно, зачем удалять ????? *)
   let apply sub (Scheme (bind_set, ty)) =
@@ -326,9 +321,9 @@ end
 module TypeEnv : sig
   type t
 
+  val empty : t
   val embeded : t
   val update : t -> string -> scheme -> t
-  val empty : t
   val free_vars : t -> TypeVarSet.t
   val apply : Subst.t -> t -> t
   val find : t -> string -> scheme option
@@ -342,18 +337,6 @@ end = struct
   (* overwrite existing *)
   let update mp k v = Map.update mp k ~f:(function _ -> v)
   let empty = Map.empty (module String)
-
-  let free_vars env =
-    Map.fold env ~init:TypeVarSet.empty ~f:(fun ~key:_ ~data acc ->
-      TypeVarSet.union acc (Scheme.free_vars data))
-  ;;
-
-  let apply sub env = Map.map env ~f:(Scheme.apply sub)
-  let find mp k = Map.find mp k
-
-  let compose env1 env2 =
-    Map.fold env2 ~init:env1 ~f:(fun ~key ~data acc -> update acc key data)
-  ;;
 
   let embeded =
     let init_env = empty in
@@ -381,6 +364,19 @@ end = struct
     init_env
   ;;
 
+  let free_vars env =
+    Map.fold env ~init:TypeVarSet.empty ~f:(fun ~key:_ ~data acc ->
+      TypeVarSet.union acc (Scheme.free_vars data))
+  ;;
+
+  let apply sub env = Map.map env ~f:(Scheme.apply sub)
+  let find mp k = Map.find mp k
+
+  let compose env1 env2 =
+    Map.fold env2 ~init:env1 ~f:(fun ~key ~data acc -> update acc key data)
+  ;;
+
+  (* TODO : maybe not print sheme *)
   let pp_env ppf env =
     Map.iteri env ~f:(fun ~key ~data ->
       match find embeded key with
@@ -484,43 +480,10 @@ let infer_expr =
     | Ast.Expr_const c ->
       let ty = infer_const c in
       return (Subst.empty, ty)
-    | Ast.Expr_val (Ast.LCIdent name) -> lookup_env env name (*** <---- OK *)
-    | Ast.Expr_fun (pattern, e) ->
-      let* sub1, typ1, new_env = infer_pattern TypeEnv.empty pattern in
-      let env = TypeEnv.compose new_env env in
-      let* sub2, typ2 = helper (TypeEnv.apply sub1 env) e in
-      let arg_type = Subst.apply sub2 typ1 in
-      let* final_sub = Subst.compose sub1 sub2 in
-      return (final_sub, TArr (arg_type, typ2))
-    | Expr_app (e1, e2) ->
-      let* return_type = fresh_var in
-      let* sub1, typ1 = helper env e1 in
-      let env1 = TypeEnv.apply sub1 env in
-      let* sub2, typ2 = helper env1 e2 in
-      let* sub3 = Subst.unify (Subst.apply sub2 typ1) (TArr (typ2, return_type)) in
-      let* final_sub = Subst.compose_all [ sub1; sub2; sub3 ] in
-      return (final_sub, Subst.apply sub3 return_type)
-    | Ast.Expr_let ((false, LCIdent name, e1), e2) ->
-      let* sub1, typ1 = helper env e1 in
-      let env = TypeEnv.apply sub1 env in
-      let gen_scheme = generalize env typ1 in
-      let env = TypeEnv.update env name gen_scheme in
-      let* sub2, typ2 = helper env e2 in
-      let* final_sub = Subst.compose sub1 sub2 in
-      return (final_sub, typ2)
-    | Ast.Expr_let ((true, LCIdent name, e1), e2) ->
+    | Ast.Expr_empty_list ->
       let* ty = fresh_var in
-      let env = TypeEnv.update env name (Scheme (TypeVarSet.empty, ty)) in
-      let* sub1, typ1 = helper env e1 in
-      let* sub2 = Subst.unify typ1 ty in
-      let* sub3 = Subst.compose sub1 sub2 in
-      let env = TypeEnv.apply sub3 env in
-      let typ1 = Subst.apply sub3 typ1 in
-      let gen_scheme = generalize env typ1 in
-      let env = TypeEnv.update env name gen_scheme in
-      let* sub4, typ2 = helper env e2 in
-      let* final_sub = Subst.compose sub3 sub4 in
-      return (final_sub, typ2)
+      return (Subst.empty, TList ty)
+    | Ast.Expr_val (Ast.LCIdent name) -> lookup_env env name
     | Ast.Un_op (_, e) ->
       let* return_type = fresh_var in
       let* sub1, typ1 = helper env e in
@@ -541,6 +504,42 @@ let infer_expr =
       let* sub3 = Subst.unify (TArr (typ1, TArr (typ2, return_type))) ty in
       let* final_sub = Subst.compose_all [ sub1; sub2; sub3 ] in
       return (final_sub, Subst.apply sub3 return_type)
+    | Ast.Expr_fun (pattern, e) ->
+      let* sub1, typ1, new_env = infer_pattern TypeEnv.empty pattern in
+      let env = TypeEnv.compose new_env env in
+      let* sub2, typ2 = helper (TypeEnv.apply sub1 env) e in
+      let arg_type = Subst.apply sub2 typ1 in
+      let* final_sub = Subst.compose sub1 sub2 in
+      return (final_sub, TArr (arg_type, typ2))
+    | Expr_app (e1, e2) ->
+      let* return_type = fresh_var in
+      let* sub1, typ1 = helper env e1 in
+      let env1 = TypeEnv.apply sub1 env in
+      let* sub2, typ2 = helper env1 e2 in
+      let* sub3 = Subst.unify (Subst.apply sub2 typ1) (TArr (typ2, return_type)) in
+      let* final_sub = Subst.compose_all [ sub1; sub2; sub3 ] in
+      return (final_sub, Subst.apply sub3 return_type)
+    | Ast.Expr_let ((false, Pat_val (LCIdent name), e1), e2) ->
+      let* sub1, typ1 = helper env e1 in
+      let env = TypeEnv.apply sub1 env in
+      let gen_scheme = generalize env typ1 in
+      let env = TypeEnv.update env name gen_scheme in
+      let* sub2, typ2 = helper env e2 in
+      let* final_sub = Subst.compose sub1 sub2 in
+      return (final_sub, typ2)
+    | Ast.Expr_let ((true, Pat_val (LCIdent name), e1), e2) ->
+      let* ty = fresh_var in
+      let env = TypeEnv.update env name (Scheme (TypeVarSet.empty, ty)) in
+      let* sub1, typ1 = helper env e1 in
+      let* sub2 = Subst.unify typ1 ty in
+      let* sub3 = Subst.compose sub1 sub2 in
+      let env = TypeEnv.apply sub3 env in
+      let typ1 = Subst.apply sub3 typ1 in
+      let gen_scheme = generalize env typ1 in
+      let env = TypeEnv.update env name gen_scheme in
+      let* sub4, typ2 = helper env e2 in
+      let* final_sub = Subst.compose sub3 sub4 in
+      return (final_sub, typ2)
     | Ast.Expr_ite (e1, e2, e3) ->
       let* sub1, typ1 = helper env e1 in
       let* sub2, typ2 = helper env e2 in
@@ -566,9 +565,6 @@ let infer_expr =
         List.fold_right f list (return [])
       in
       return (final_sub, TTuple typ_list)
-    | Ast.Expr_empty_list ->
-      let* ty = fresh_var in
-      return (Subst.empty, TList ty)
     | Ast.Expr_cons_list (e1, e2) ->
       let* sub1, typ1 = helper env e1 in
       let* sub2, typ2 = helper (TypeEnv.apply sub1 env) e2 in
@@ -605,20 +601,20 @@ let infer_expr =
       let* sub2, ty = helper (TypeEnv.apply sub1 env) e2 in
       let* sub = Subst.compose sub1 sub2 in
       return (sub, ty)
-    | Expr_fstring _ -> return (Subst.empty, TPrim "INFERENCE NOT SUPPORTED")
+    | _ -> return (Subst.empty, TPrim "INFERENCE NOT SUPPORTED")
   in
   helper
 ;;
 
 (* TODO: change to pat *)
 let infer_decl env = function
-  | Ast.Let_decl (false, Ast.LCIdent name, expr) ->
+  | Ast.Let_decl (false, Pat_val (Ast.LCIdent name), expr) ->
     let* sub, ty = infer_expr env expr in
     let env = TypeEnv.apply sub env in
     let gen_scheme = generalize env ty in
     let env = TypeEnv.update env name gen_scheme in
     return (env, ty)
-  | Ast.Let_decl (true, Ast.LCIdent name, expr) ->
+  | Ast.Let_decl (true, Pat_val (Ast.LCIdent name), expr) ->
     let* ty = fresh_var in
     let env = TypeEnv.update env name (Scheme (TypeVarSet.empty, ty)) in
     let* sub1, typ1 = infer_expr env expr in
@@ -629,6 +625,7 @@ let infer_decl env = function
     let gen_scheme = generalize env typ1 in
     let env = TypeEnv.update env name gen_scheme in
     return (env, Subst.apply sub2 typ1)
+  | _ -> return (env, TPrim "INFERENCE NOT SUPPORTED")
 ;;
 
 let infer_program decl_list =

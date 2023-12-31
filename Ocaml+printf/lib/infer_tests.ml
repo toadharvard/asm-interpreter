@@ -11,12 +11,12 @@ let infer_expr_and_print str =
   | Error err -> Format.printf "%a" Inferencer.pp_error err
 ;;
 
-let infer_program_and_print str =
+(* let infer_program_and_print str =
   let parsed = Result.get_ok (Parser.parse_program str) in
   match Inferencer.run_infer_program parsed with
   | Ok ty -> Format.printf "%a" Inferencer.TypeEnv.pp_env ty
   | Error err -> Format.printf "%a" Inferencer.pp_error err
-;;
+;; *)
 
 let%expect_test _ =
   let _ = infer_expr_and_print {|let f x g = g x in f|} in
@@ -119,7 +119,7 @@ let%expect_test _ =
 
 let%expect_test _ =
   let _ = infer_expr_and_print {|let f (a::1) = 0 in f |} in
-  [%expect {| Incorrect pattern mathing, expected '_0 list, found int |}]
+  [%expect {| Incorrect pattern matching, expected '_0 list, found int |}]
 ;;
 
 let%expect_test _ =
@@ -133,11 +133,16 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  let _ = infer_expr_and_print {|let b = 'c' in let a = 1::b::2::[] in a|} in
+  let _ = infer_expr_and_print {|let b = 'c' in let a   = 1::b::2::[] in a|} in
   [%expect {| Unification failed on char and int |}]
 ;;
 
 let%expect_test _ =
   let _ = infer_expr_and_print {|let f x = f  1 in f |} in
   [%expect {| Undefined variable 'f' |}]
+;;
+
+let%expect_test _ =
+  let _ = infer_expr_and_print {|fun f x -> x x|} in
+  [%expect {| Occurs check failed |}]
 ;;

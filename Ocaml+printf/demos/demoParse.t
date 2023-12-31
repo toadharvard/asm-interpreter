@@ -3,7 +3,7 @@
   > let sum x y = x + y
   > EOF
   [(Let_decl
-      (true, (LCIdent "fac"),
+      (true, (Pat_val (LCIdent "fac")),
        (Expr_fun ((Pat_val (LCIdent "n")),
           (Expr_ite (
              (Bin_op (Leq, (Expr_val (LCIdent "n")), (Expr_const (Int 1)))),
@@ -17,7 +17,7 @@
              ))
           ))));
     (Let_decl
-       (false, (LCIdent "sum"),
+       (false, (Pat_val (LCIdent "sum")),
         (Expr_fun ((Pat_val (LCIdent "x")),
            (Expr_fun ((Pat_val (LCIdent "y")),
               (Bin_op (Add, (Expr_val (LCIdent "x")), (Expr_val (LCIdent "y"))

@@ -27,13 +27,10 @@ let is_digit = function
   | _ -> false
 ;;
 
-(* maybe not all cases are considered for now *)
 let is_keyword = function
-  | "and"
   | "else"
   | "false"
   | "fun"
-  | "function"
   | "if"
   | "in"
   | "let"
@@ -277,7 +274,11 @@ let parse_list expr =
           ])
 ;;
 
-let parse_any_pat = take_whitespaces *> char '_' >>| fun _ -> Pat_any
+let parse_any_pat =
+  take_whitespaces *> token1
+  >>= fun s -> if s = "_" then return Pat_any else fail "Pattern \"any\" expected"
+;;
+
 let parse_val_pat = take_whitespaces *> valname >>| fun s -> Pat_val s
 
 let parse_const_pat =
@@ -324,39 +325,28 @@ let expr_match expr =
   >>= fun e -> keyword "with" *> many1 case >>| fun l -> Expr_match (e, l)
 ;;
 
-let expr_fun expr =
-  keyword "fun"
-  *> take_whitespaces1
-  *> fix (fun cur_parser ->
-    parse_pat
-    >>= fun pat ->
-    choice
-      [ (take_whitespaces *> op_parse_helper "->" *> expr
-         >>| fun fun_expr -> Expr_fun (pat, fun_expr))
-      ; (take_whitespaces1 *> cur_parser >>| fun fun_expr -> Expr_fun (pat, fun_expr))
-      ])
+let fun_helper expr =
+  let rec helper e = function
+    | [] -> e
+    | h :: tl -> Expr_fun (h, helper e tl)
+  in
+  many1 parse_pat
+  >>= fun args ->
+  take_whitespaces *> (op_parse_helper "->" <|> op_parse_helper "=") *> expr
+  >>| fun e -> helper e args
 ;;
 
+let expr_fun expr = keyword "fun" *> take_whitespaces1 *> fun_helper expr
+
 let let_in expr =
-  let fun_helper =
-    fix (fun cur_parser ->
-      parse_pat
-      >>= fun pat ->
-      choice
-        [ (take_whitespaces *> op_parse_helper "=" *> expr
-           <* keyword "in"
-           >>| fun fun_expr -> Expr_fun (pat, fun_expr))
-        ; (take_whitespaces1 *> cur_parser >>| fun fun_expr -> Expr_fun (pat, fun_expr))
-        ])
-  in
   keyword "let"
   *> lift4
        (fun rec_flag name expr1 expr2 -> Expr_let ((rec_flag, name, expr1), expr2))
        (option false (whitespace1_keyword "rec" >>| fun s -> String.equal s "rec"))
-       (take_whitespaces1 *> valname)
+       (take_whitespaces1 *> parse_val_pat)
        (take_whitespaces *> op_parse_helper "=" *> expr
-        <* keyword "in"
-        <|> take_whitespaces1 *> fun_helper)
+        <|> take_whitespaces1 *> fun_helper expr
+        <* keyword "in")
        expr
 ;;
 
@@ -371,10 +361,6 @@ let get_by_id expr =
 ;;
 
 let seq_op = take_whitespaces *> char ';' *> return (fun e1 e2 -> Expr_seq (e1, e2))
-
-(* let expr_seq expr =
-   expr <* take_whitespaces <* char ';' >>= fun e1 -> expr >>| fun e2 -> Expr_seq (e1, e2)
-   ;; *)
 
 let expr =
   take_whitespaces
@@ -412,24 +398,14 @@ let expr =
   <* take_whitespaces
 ;;
 
-let let_fun =
-  fix (fun cur_parser ->
-    parse_pat
-    >>= fun pat ->
-    choice
-      [ (take_whitespaces *> op_parse_helper "=" *> expr
-         >>| fun fun_expr -> Expr_fun (pat, fun_expr))
-      ; (take_whitespaces1 *> cur_parser >>| fun fun_expr -> Expr_fun (pat, fun_expr))
-      ])
-;;
-
 let decl =
   keyword "let"
   *> lift3
        (fun rec_flag name expr -> Let_decl (rec_flag, name, expr))
        (option false (whitespace1_keyword "rec" >>| fun s -> String.equal s "rec"))
-       (take_whitespaces1 *> valname)
-       (take_whitespaces *> op_parse_helper "=" *> expr <|> take_whitespaces1 *> let_fun)
+       (take_whitespaces1 *> parse_pat)
+       (take_whitespaces *> op_parse_helper "=" *> expr
+        <|> take_whitespaces1 *> fun_helper expr)
   <* take_whitespaces
   <* option "" (string ";;")
 ;;
