@@ -133,8 +133,15 @@ let find_and_set_starting_label ast =
 ;;
 
 let get_next_statement_index ast current_index =
+  let find_index cond lst =
+    let rec helper index = function
+      | [] -> None
+      | x :: xs -> if cond x then Some index else helper (index + 1) xs
+    in
+    helper 0 lst
+  in
   let handle_label_jump label =
-    match List.find_index (fun x -> x = Label_decl label) ast with
+    match find_index (fun x -> x = Label_decl label) ast with
     | Some index ->
       let* _ = reset_label_to_jmp in
       return (index + 1)
