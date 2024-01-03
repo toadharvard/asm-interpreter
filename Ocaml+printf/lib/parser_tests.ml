@@ -245,6 +245,30 @@ let%expect_test _ =
       ] |}]
 ;;
 
+let%expect_test _ =
+  let _ = parse_and_print {| let str = "sdfs"; printf "%s" str |} in
+  [%expect {|
+    [(Let_decl
+        (false, (LCIdent "str"),
+         (Expr_seq ((Expr_const (String "sdfs")),
+            (Expr_app (
+               (Expr_app ((Expr_val (LCIdent "printf")),
+                  (Expr_const (String "%s")))),
+               (Expr_val (LCIdent "str"))))
+            ))))
+      ] |}]
+;;
+
+let%expect_test _ =
+  let _ = parse_and_print {| printf "%s" str |} in
+  [%expect {|
+    [(Expr
+        (Expr_app (
+           (Expr_app ((Expr_val (LCIdent "printf")), (Expr_const (String "%s")))),
+           (Expr_val (LCIdent "str")))))
+      ] |}]
+;;
+
 (* let%expect_test _ =
    parse_and_print "fun x y z -> x + y + z";
    [%expect
