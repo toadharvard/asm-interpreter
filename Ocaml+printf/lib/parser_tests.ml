@@ -12,9 +12,9 @@ let%expect_test _ =
   parse_and_print {|  ;; ;;;;   ;; ;;let _a=1;; ;;;; let   _b =1+2  |};
   [%expect
     {|
-    [(Let_decl (false, (Pat_val (LCIdent "_a")), (Expr_const (Int 1))));
+    [(Let_decl (false, (LCIdent "_a"), (Expr_const (Int 1))));
       (Let_decl
-         (false, (Pat_val (LCIdent "_b")),
+         (false, (LCIdent "_b"),
           (Bin_op (Add, (Expr_const (Int 1)), (Expr_const (Int 2))))))
       ] |}]
 ;;
@@ -24,7 +24,7 @@ let%expect_test _ =
   [%expect
     {|
     [(Let_decl
-        (false, (Pat_val (LCIdent "a")),
+        (false, (LCIdent "a"),
          (Bin_op (Sub,
             (Bin_op (Mul,
                (Bin_op (Div, (Expr_const (Int 10)),
@@ -46,7 +46,7 @@ let%expect_test _ =
   [%expect
     {|
     [(Let_decl
-        (true, (Pat_val (LCIdent "fac")),
+        (true, (LCIdent "fac"),
          (Expr_fun ((Pat_val (LCIdent "n")),
             (Expr_ite (
                (Bin_op (Leq, (Expr_val (LCIdent "n")), (Expr_const (Int 1)))),
@@ -67,7 +67,7 @@ let%expect_test _ =
   [%expect
     {|
     [(Let_decl
-        (false, (Pat_val (LCIdent "f")),
+        (false, (LCIdent "f"),
          (Expr_fun ((Pat_val (LCIdent "a")),
             (Expr_fun ((Pat_val (LCIdent "b")),
                (Expr_fun ((Pat_val (LCIdent "z")),
@@ -87,7 +87,7 @@ let%expect_test _ =
   [%expect
     {|
     [(Let_decl
-        (false, (Pat_val (LCIdent "f")),
+        (false, (LCIdent "f"),
          (Expr_ite ((Expr_const (Bool true)),
             (Expr_ite ((Expr_const (Bool true)), (Expr_val (LCIdent "a")),
                (Expr_val (LCIdent "b")))),
@@ -103,12 +103,12 @@ let%expect_test _ =
   [%expect
     {|
     [(Let_decl
-        (false, (Pat_val (LCIdent "a")),
+        (false, (LCIdent "a"),
          (Expr_let (
-            (false, (Pat_val (LCIdent "id")),
+            (false, (LCIdent "id"),
              (Expr_fun ((Pat_val (LCIdent "x")), (Expr_val (LCIdent "x"))))),
             (Expr_let (
-               (false, (Pat_val (LCIdent "f")),
+               (false, (LCIdent "f"),
                 (Expr_fun ((Pat_val (LCIdent "x")),
                    (Expr_ite (
                       (Bin_op (Gre, (Expr_val (LCIdent "x")),
@@ -124,11 +124,11 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  parse_and_print "let tuple1 = (1,x, 1+2 , (1, 2, 3))";
+  parse_and_print {|let tuple1 = (1,x, 1+2 , (1, 2, 3))|};
   [%expect
     {|
     [(Let_decl
-        (false, (Pat_val (LCIdent "tuple1")),
+        (false, (LCIdent "tuple1"),
          (Expr_tuple
             [(Expr_const (Int 1)); (Expr_val (LCIdent "x"));
               (Bin_op (Add, (Expr_const (Int 1)), (Expr_const (Int 2))));
@@ -140,11 +140,11 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  parse_and_print "let a =5::4::[1; 2; 3]";
+  parse_and_print {|let a =5::4::[1; 2; 3]|};
   [%expect
     {|
       [(Let_decl
-          (false, (Pat_val (LCIdent "a")),
+          (false, (LCIdent "a"),
            (Expr_cons_list ((Expr_const (Int 5)),
               (Expr_cons_list ((Expr_const (Int 4)),
                  (Expr_cons_list ((Expr_const (Int 1)),
@@ -158,22 +158,23 @@ let%expect_test _ =
 
 let%expect_test _ =
   parse_and_print
-    "let f x = match x with | h::tl -> let x = 1 in x | _ -> let id = fun x -> x in if \
-     (0 < 1) then 2 else id 3";
+    {|let f x = match x with
+      | h::tl -> let x = 1 in x
+      | _ -> let id = fun x -> x in
+         if (0 < 1) then 2 else id 3|};
   [%expect
     {|
     [(Let_decl
-        (false, (Pat_val (LCIdent "f")),
+        (false, (LCIdent "f"),
          (Expr_fun ((Pat_val (LCIdent "x")),
             (Expr_match ((Expr_val (LCIdent "x")),
                [((Pat_cons_list ((Pat_val (LCIdent "h")),
                     (Pat_val (LCIdent "tl")))),
-                 (Expr_let (
-                    (false, (Pat_val (LCIdent "x")), (Expr_const (Int 1))),
+                 (Expr_let ((false, (LCIdent "x"), (Expr_const (Int 1))),
                     (Expr_val (LCIdent "x")))));
                  (Pat_any,
                   (Expr_let (
-                     (false, (Pat_val (LCIdent "id")),
+                     (false, (LCIdent "id"),
                       (Expr_fun ((Pat_val (LCIdent "x")),
                          (Expr_val (LCIdent "x"))))),
                      (Expr_ite (
@@ -195,9 +196,9 @@ let%expect_test _ =
   [%expect
     {|
     [(Let_decl
-        (false, (Pat_val (LCIdent "k")),
+        (false, (LCIdent "k"),
          (Expr_let (
-            (false, (Pat_val (LCIdent "f")),
+            (false, (LCIdent "f"),
              (Expr_fun (
                 (Pat_tuple
                    [(Pat_cons_list ((Pat_val (LCIdent "t")),
@@ -215,19 +216,43 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  parse_and_print "let f = printf \"sdfsdf\"; prtinf \"sfsf%c %d\"; [323;32]";
-  [%expect {|
+  parse_and_print "let f = printf \"sdfsdf\"; prtinf \"sfsf%c %d\";; [323;32]";
+  [%expect
+    {|
     [(Let_decl
-        (false, (Pat_val (LCIdent "f")),
+        (false, (LCIdent "f"),
          (Expr_seq (
             (Expr_app ((Expr_val (LCIdent "printf")),
                (Expr_const (String "sdfsdf")))),
-            (Expr_seq (
-               (Expr_app ((Expr_val (LCIdent "prtinf")),
-                  (Expr_const (String "sfsf%c %d")))),
-               (Expr_cons_list ((Expr_const (Int 323)),
-                  (Expr_cons_list ((Expr_const (Int 32)), Expr_empty_list))))
-               ))
-            ))))
+            (Expr_app ((Expr_val (LCIdent "prtinf")),
+               (Expr_const (String "sfsf%c %d"))))
+            ))));
+      (Expr
+         (Expr_cons_list ((Expr_const (Int 323)),
+            (Expr_cons_list ((Expr_const (Int 32)), Expr_empty_list)))))
       ] |}]
 ;;
+
+let%expect_test _ =
+  parse_and_print "1; 2 let x = 1;; let a = 2; 3";
+  [%expect
+    {|
+    [(Expr (Expr_seq ((Expr_const (Int 1)), (Expr_const (Int 2)))));
+      (Let_decl (false, (LCIdent "x"), (Expr_const (Int 1))));
+      (Let_decl
+         (false, (LCIdent "a"),
+          (Expr_seq ((Expr_const (Int 2)), (Expr_const (Int 3))))))
+      ] |}]
+;;
+
+(* let%expect_test _ =
+   parse_and_print "fun x y z -> x + y + z";
+   [%expect
+    {|
+    [(Expr (Expr_seq ((Expr_const (Int 1)), (Expr_const (Int 2)))));
+      (Let_decl (false, (LCIdent "x"), (Expr_const (Int 1))));
+      (Let_decl
+         (false, (LCIdent "a"),
+          (Expr_seq ((Expr_const (Int 2)), (Expr_const (Int 3))))))
+      ] |}]
+   ;; *)

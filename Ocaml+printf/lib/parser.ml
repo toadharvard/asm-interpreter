@@ -213,6 +213,12 @@ let concat_op =
   take_whitespaces *> op_parse_helper "^" *> return (fun e1 e2 -> Bin_op (Concat, e1, e2))
 ;;
 
+let concat_format_op =
+  take_whitespaces
+  *> op_parse_helper "^^"
+  *> return (fun e1 e2 -> Bin_op (Concat_format, e1, e2))
+;;
+
 let list_cons_op =
   take_whitespaces
   *> op_parse_helper "::"
@@ -325,27 +331,26 @@ let expr_match expr =
   >>= fun e -> keyword "with" *> many1 case >>| fun l -> Expr_match (e, l)
 ;;
 
-let fun_helper expr =
+let fun_helper expr sep =
   let rec helper e = function
     | [] -> e
     | h :: tl -> Expr_fun (h, helper e tl)
   in
   many1 parse_pat
   >>= fun args ->
-  take_whitespaces *> (op_parse_helper "->" <|> op_parse_helper "=") *> expr
-  >>| fun e -> helper e args
+  take_whitespaces *> op_parse_helper sep *> expr >>| fun e -> helper e args
 ;;
 
-let expr_fun expr = keyword "fun" *> take_whitespaces1 *> fun_helper expr
+let expr_fun expr = keyword "fun" *> take_whitespaces1 *> fun_helper expr "->"
 
 let let_in expr =
   keyword "let"
   *> lift4
        (fun rec_flag name expr1 expr2 -> Expr_let ((rec_flag, name, expr1), expr2))
        (option false (whitespace1_keyword "rec" >>| fun s -> String.equal s "rec"))
-       (take_whitespaces1 *> parse_val_pat)
+       (take_whitespaces1 *> valname)
        (take_whitespaces *> op_parse_helper "=" *> expr
-        <|> take_whitespaces1 *> fun_helper expr
+        <|> take_whitespaces1 *> fun_helper expr "="
         <* keyword "in")
        expr
 ;;
@@ -382,7 +387,7 @@ let expr =
     let cur_expr = chainl1 cur_expr (mul <|> div) in
     let cur_expr = chainl1 cur_expr (add <|> sub) in
     let cur_expr = chainr1 cur_expr list_cons_op in
-    let cur_expr = chainl1 cur_expr concat_op in
+    let cur_expr = chainl1 cur_expr (concat_op <|> concat_format_op) in
     let cur_expr = chainl1 cur_expr rel in
     let cur_expr = chainr1 cur_expr and_op in
     let cur_expr = chainr1 cur_expr or_op in
@@ -403,16 +408,18 @@ let decl =
   *> lift3
        (fun rec_flag name expr -> Let_decl (rec_flag, name, expr))
        (option false (whitespace1_keyword "rec" >>| fun s -> String.equal s "rec"))
-       (take_whitespaces1 *> parse_pat)
+       (take_whitespaces1 *> valname)
        (take_whitespaces *> op_parse_helper "=" *> expr
-        <|> take_whitespaces1 *> fun_helper expr)
+        <|> take_whitespaces1 *> fun_helper expr "=")
   <* take_whitespaces
   <* option "" (string ";;")
 ;;
 
+let expr_top = expr >>| fun e -> Expr e
+
 let program_parser : program t =
   let empty_decl = many (take_whitespaces *> string ";;") in
-  many1 (empty_decl *> decl <* empty_decl) <* take_whitespaces
+  many1 (empty_decl *> (decl <|> expr_top) <* empty_decl) <* take_whitespaces
 ;;
 
 let parse_program s = parse_string ~consume:All program_parser s

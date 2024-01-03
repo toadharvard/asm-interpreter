@@ -10,7 +10,7 @@ type fmt_item =
   | FmtEmpty of string (** format string without any specifications *)
 [@@deriving eq, show { with_path = false }]
 
-type fstring = fmt_item list [@@deriving eq, show { with_path = false }]
+type fstring = fmt_item list (** Empty list means empty string *) [@@deriving eq, show { with_path = false }]
 
 type const =
   | Int of int (** 1 *)
@@ -38,6 +38,7 @@ type bin_op =
   | And (** && *)
   | Or (** || *)
   | Concat (** ^ *)
+  | Concat_format (** ^^ *)
 [@@deriving eq, show { with_path = false }]
 
 type val_name = LCIdent of string (** variable_name1 *)
@@ -67,11 +68,18 @@ type expr =
   | Expr_tuple of expr list (** (1, a, 'c') *)
   | Expr_seq of expr * expr (** e1; e2 *)
   | Expr_fstring of fstring (* "abc%d %c" *)
+  (* hard-coded supported functions *)
+  | Expr_printf
+  | Expr_get
 [@@deriving eq, show { with_path = false }]
 
-and decl = bool * pattern * expr
+and decl = bool * val_name * expr
+(* type let_decl = Let_decl of decl  [let x = 1] *)
+(* [@@deriving eq, show { with_path = false }] *)
 
-type let_decl = Let_decl of decl (** [let x = 1] *)
+type toplevel =
+  | Let_decl of decl
+  | Expr of expr
 [@@deriving eq, show { with_path = false }]
 
-type program = let_decl list [@@deriving eq, show { with_path = false }]
+type program = toplevel list [@@deriving eq, show { with_path = false }]
