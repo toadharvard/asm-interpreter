@@ -14,7 +14,9 @@ let rec convert_to_string = function
 ;;
 
 (* this printing method is purely for convenience *)
-let pp_fstring ppf fstring = Format.fprintf ppf {|"%s" format|} (convert_to_string fstring)
+let pp_fstring ppf fstring =
+  Format.fprintf ppf {|"%s" format|} (convert_to_string fstring)
+;;
 
 type value =
   | VUnit
@@ -30,28 +32,36 @@ type value =
 and env_values = (string, value, Base.String.comparator_witness) Base.Map.t
 
 let rec pp_value ppf = function
-  | VUnit -> Format.printf "()"
+  | VUnit -> Format.fprintf ppf "()"
   | VInt i -> Format.fprintf ppf "%d" i
   | VBool b -> Format.fprintf ppf "%B" b
   | VChar c -> Format.fprintf ppf {|'%c'|} c
   | VString s -> Format.fprintf ppf {|"%s"|} s
   | VFun _ -> Format.fprintf ppf "<fun>"
   | VTuple list ->
-    Format.printf "(";
+    Format.fprintf ppf "(";
     let rec helper = function
-      | [] -> Format.printf ")"
+      | [] -> Format.fprintf ppf ")"
       | h :: tl ->
-        let fmt = if tl = [] then format_of_string "%a" else format_of_string "%a, " in
+        let fmt =
+          match tl with
+          | [] -> format_of_string "%a"
+          | _ -> format_of_string "%a, "
+        in
         Format.fprintf ppf fmt pp_value h;
         helper tl
     in
     helper list
   | VList list ->
-    Format.printf "[";
+    Format.fprintf ppf "[";
     let rec helper = function
-      | [] -> Format.printf "]"
+      | [] -> Format.fprintf ppf "]"
       | h :: tl ->
-        let fmt = if tl = [] then format_of_string "%a" else format_of_string "%a; " in
+        let fmt =
+          match tl with
+          | [] -> format_of_string "%a"
+          | _ -> format_of_string "%a; "
+        in
         Format.fprintf ppf fmt pp_value h;
         helper tl
     in
@@ -72,7 +82,7 @@ type error =
 let pp_error ppf : error -> unit = function
   | `Division_by_zero -> Format.fprintf ppf {|Division by zero|}
   | `Invalid_argument s -> Format.fprintf ppf {|Invalid argument: %s|} s
-  | `Matching_failure -> Format.fprintf ppf {|FMatching failure|}
+  | `Matching_failure -> Format.fprintf ppf {|Matching failure|}
   | `Impossible_state s -> Format.fprintf ppf {|Impossible interpreter state: %s|} s
   | `No_variable -> Format.fprintf ppf {|Undefined variable|}
   | `Type_mismatch -> Format.fprintf ppf {|Type mismatch|}
@@ -82,9 +92,9 @@ module MONAD_WRITE_ERROR : sig
   type 'a t
 
   val return : 'a -> 'a t
+  val bind : 'a t -> ('a -> 'b t) -> 'b t
   val write : string -> unit t
   val fail : error -> 'a t
-  val bind : 'a t -> ('a -> 'b t) -> 'b t
   val run : 'a t -> string list * ('a, error) Base.Result.t
 
   include Base.Monad.Infix with type 'a t := 'a t
@@ -133,7 +143,6 @@ end = struct
   open Base
 
   let empty = Map.empty (module String)
-  let std = Map.empty (module String)
   let find mp key = Map.find mp key
   let update mp key data = Map.update mp key ~f:(function _ -> data)
 
@@ -159,10 +168,10 @@ end = struct
     Map.iteri env_values ~f:(fun ~key ~data ->
       match find std key with
       | None ->
-        Stdlib.Format.printf "val %s = " key;
+        Stdlib.Format.fprintf ppf "val %s = " key;
         pp_value ppf data;
-        Stdlib.Format.printf "\n"
-      | Some _ -> Stdlib.Format.printf "")
+        Stdlib.Format.fprintf ppf "\n"
+      | Some _ -> Stdlib.Format.fprintf ppf "")
   ;;
 end
 
@@ -238,7 +247,7 @@ let eval_printf env =
     let* () = write (convert_to_string fmt) in
     return VUnit
   | Expr_fun (pat, expr) -> return @@ VFun (None, pat, expr, EnvValues.empty)
-  | _ -> fail @@ `Impossible_state "Gen_body returns wrong value"
+  | _ -> fail @@ `Impossible_state "gen_body returns wrong value"
 ;;
 
 let eval_formatted_printf env fmt =
@@ -375,7 +384,7 @@ let eval_expr =
       let* _ = helper env e1 in
       let* v2 = helper env e2 in
       return v2
-      (* functions with hardcoded implementation below *)
+      (* below are the functions with hardcoded implementation *)
     | Expr_format_of_str ->
       let s = EnvValues.find env "s" in
       (match s with
@@ -439,175 +448,3 @@ let run_eval_expr expr =
 ;;
 
 (* TODO: remove tests *)
-
-let eval_expr_and_print str =
-  let res = Result.get_ok (Parser.run_parser_expr str) in
-  let _, res = Result.get_ok (Inferencer.run_infer_expr res) in
-  let res = run_eval_expr res in
-  match res with
-  | Base.Result.Ok v -> Format.printf "%a" pp_value v
-  | Base.Result.Error err -> Format.printf "%a" pp_error err
-;;
-
-let eval_program_and_print str =
-  let res = Result.get_ok (Parser.run_parser_program str) in
-  (* Format.printf "%a\n" Ast.pp_program res; *)
-  let _, res = Result.get_ok (Inferencer.run_infer_program res) in
-  (* Format.printf "%a" Ast.pp_program res; *)
-  let res = run_eval_program res in
-  match res with
-  | Base.Result.Ok v -> Format.printf "%a" EnvValues.pp_env_values v
-  | Base.Result.Error err -> Format.printf "%a" pp_error err
-;;
-
-(* well formed *)
-
-let%expect_test _ =
-  let _ =
-    eval_program_and_print {|
-    let i = 0
-    let str = "abc"
-    let c = str.[i]
-  |}
-  in
-  [%expect {|
-    val c = 'a'
-    val i = 0
-    val str = "abc" |}]
-;;
-
-let%expect_test _ =
-  let _ =
-    eval_program_and_print
-      {|
-    let str = "1234567"
-    let c = get str 1
-    let b = false;;
-    printf "string: %s; bool: %B\nnum: %d; char: %c" "abcdef" b 123 c
-    let fmt1 = format_of_string "char2 %c string %s"
-    let fmt2 = "char1 %c" ^^ fmt1
-    let fmt3 = format_of_string fmt2
-    let my_printf = printf fmt3;;
-    my_printf str.[(length str - 1)] c "str"
-  |}
-  in
-  [%expect
-    {|
-    char1 7char2 2 string str
-    string: abcdef; bool: false
-    num: 123; char: 2
-    val b = false
-    val c = '2'
-    val fmt1 = "char2 %c string %s" format
-    val fmt2 = "char1 %cchar2 %c string %s" format
-    val fmt3 = "char1 %cchar2 %c string %s" format
-    val my_printf = <fun>
-    val str = "1234567" |}]
-;;
-
-let%expect_test _ =
-  let _ =
-    eval_program_and_print
-      {|
-  let rec fac n = if n <= 1 then 1 else n * fac (n - 1)
-  let a = fac 6
-  let rev list =
-    let rec helper acc list =
-      match list with
-      | [] -> acc
-      | h :: tl -> helper (h :: acc) tl
-    in
-    helper [] list 
-  let reversed1 = rev [1;2;3;4;5]
-  let reversed2 = rev [true;false;false;false]
-  |}
-  in
-  [%expect
-    {|
-    val a = 720
-    val fac = <fun>
-    val rev = <fun>
-    val reversed1 = [5; 4; 3; 2; 1]
-    val reversed2 = [false; false; false; true] |}]
-;;
-
-let%expect_test _ =
-  let _ = eval_expr_and_print {|let a = 0 in let b = 1 in b / a|} in
-  [%expect {| Division by zero |}]
-;;
-
-let%expect_test _ =
-  let _ = eval_expr_and_print {|let f = 2 in f|} in
-  [%expect {| 2 |}]
-;;
-
-let%expect_test _ =
-  let _ = eval_expr_and_print {|let a = 1 in let b = 2 in let c = 3 in a + b * c|} in
-  [%expect {| 7 |}]
-;;
-
-let%expect_test _ =
-  let _ = eval_expr_and_print {|let id x = x in let b a = id a in b 5|} in
-  [%expect {| 5 |}]
-;;
-
-let%expect_test _ =
-  let _ =
-    eval_expr_and_print {|let rec f n = if n <= 1 then 1 else n * f (n - 1) in f 5|}
-  in
-  [%expect {| 120 |}]
-;;
-
-let%expect_test _ =
-  let _ =
-    eval_expr_and_print
-      {|let rec f a b = if a + b > 100 then a + b else f (a + 3) (b * 2) in f 1 5 |}
-  in
-  [%expect {| 176 |}]
-;;
-
-let%expect_test _ =
-  let _ = eval_expr_and_print {|let rec x = 1 in x|} in
-  [%expect {| 1 |}]
-;;
-
-let%expect_test _ =
-  let _ = eval_expr_and_print {|let str = "abc" in str.[0]|} in
-  [%expect {| 'a' |}]
-;;
-
-let%expect_test _ =
-  let _ = eval_expr_and_print {|let a = (1+3*4, 'c', "ab" ^ "cd", true) in a|} in
-  [%expect {| (13, 'c', "abcd", true) |}]
-;;
-
-let%expect_test _ =
-  let _ = eval_expr_and_print {|let str = "a\nc" in str.[3]|} in
-  [%expect {| Invalid argument: Index out of bounds |}]
-;;
-
-let%expect_test _ =
-  let _ =
-    eval_expr_and_print
-      {|let a = 1::2::[3;4] in match a with | h::tl -> (h, tl) | _ -> (1,[2])|}
-  in
-  [%expect {| (1, [2; 3; 4]) |}]
-;;
-
-let%expect_test _ =
-  let _ =
-    eval_expr_and_print
-      {|let str = "abc" in let a = (str, 'c') in match a with | ("abc", _) -> "yes" | _ -> "no"|}
-  in
-  [%expect {| "yes" |}]
-;;
-
-let%expect_test _ =
-  let _ = eval_expr_and_print {|let fst (a, b) = a in fst (2,3)|} in
-  [%expect {| 2 |}]
-;;
-
-let%expect_test _ =
-  let _ = eval_expr_and_print {|let a = 3 / 0 in a|} in
-  [%expect {| Division by zero |}]
-;;
