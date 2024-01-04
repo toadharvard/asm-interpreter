@@ -38,7 +38,7 @@ let rec pp_value ppf = function
   | VInt i -> Format.fprintf ppf "%d" i
   | VBool b -> Format.fprintf ppf "%B" b
   | VChar c -> Format.fprintf ppf {|'%c'|} c
-  | VString s -> Format.fprintf ppf {|"%s"|} s
+  | VString s -> Format.fprintf ppf {|%S|} s
   | VFun _ -> Format.fprintf ppf "<fun>"
   | VTuple list ->
     Format.fprintf ppf "(";
