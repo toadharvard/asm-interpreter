@@ -70,6 +70,7 @@ type expr =
   | Expr_fstring of fstring (* "abc%d %c" *)
   (* hard-coded supported functions *)
   | Expr_printf
+  | Expr_format_of_str
   | Expr_get
 [@@deriving show { with_path = false }]
 

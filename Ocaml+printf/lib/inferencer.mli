@@ -13,6 +13,7 @@ type error =
   | `Occurs_check
   | `Pattern_matching of Typedtree.typ * Typedtree.typ
   | `Unification_failed of Typedtree.typ * Typedtree.typ
+  | `Unexpected_expr of Ast.expr
   ]
 
 val pp_error : Format.formatter -> error -> unit

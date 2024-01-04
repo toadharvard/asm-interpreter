@@ -39,6 +39,7 @@ type error =
   | `Invalid_format_str of string
   | `Ivalid_format_concat of typ * typ
   | `Impossible_state of string
+  | `Unexpected_expr of Ast.expr
   ]
 
 let pp_error ppf : error -> _ = function
@@ -67,6 +68,12 @@ let pp_error ppf : error -> _ = function
       t2
   | `Impossible_state s ->
     Format.fprintf ppf {|Impossible inference algorithm state: %s|} s
+  | `Unexpected_expr expr ->
+    Format.fprintf
+      ppf
+      {|Unexpected expression on type inference stage: %a|}
+      Ast.pp_expr
+      expr
 ;;
 
 module R : sig
@@ -151,7 +158,7 @@ end = struct
     ;;
   end
 
-  let run m = snd (m 3)
+  let run m = snd (m 2)
 end
 
 module Type = struct
@@ -340,15 +347,9 @@ end = struct
     let init_env =
       update
         init_env
-        "sprintf"
-        (Scheme (TypeVarSet.singleton 1, format_typ (type_var 1) @-> string_typ))
-    in
-    let init_env =
-      update
-        init_env
         "format_of_string"
         (Scheme
-           (TypeVarSet.singleton 2, format_typ (type_var 2) @-> format_typ (type_var 2)))
+           (TypeVarSet.singleton 1, format_typ (type_var 1) @-> format_typ (type_var 1)))
     in
     init_env
   ;;
@@ -698,14 +699,7 @@ and infer_expr env expr =
     let* sub3, typ2, expr2 = infer_expr env e2 in
     let* final_sub = Subst.compose_all [ sub1; sub2; sub3 ] in
     return (final_sub, typ2, Expr_seq (expr1, expr2))
-  | Expr_fstring _ ->
-    fail
-    @@ `Impossible_state {|Expression "Expr_fstring" can not appear on inference stage|}
-  | Expr_printf ->
-    fail
-    @@ `Impossible_state {|Expression "Expr_printf" can not appear on inference stage|}
-  | Expr_get ->
-    fail @@ `Impossible_state {|Expression "Expr_get" can not appear on inference stage|}
+  | expr -> fail @@ `Unexpected_expr expr
 ;;
 
 (* TODO: change to pat *)
