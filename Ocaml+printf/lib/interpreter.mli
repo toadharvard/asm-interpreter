@@ -25,9 +25,10 @@ type error =
 val pp_error : Format.formatter -> error -> unit
 
 module EnvValues : sig
-  val pp_env_values : Format.formatter -> env_values -> unit
+  val std : env_values
+  val find : env_values -> string -> value option
+  val pp_env_values : Stdlib.Format.formatter -> env_values -> unit
 end
 
 val run_eval_program : Ast.toplevel list -> (env_values, error) result
 val run_eval_expr : Ast.expr -> (value, error) result
-

@@ -19,7 +19,12 @@
  (instrumentation
   (backend bisect_ppx)))
 
+; (env
+;  (dev
+;   (flags
+;    (:standard -w -32))))
+
 (env
  (dev
   (flags
-   (:standard -w -32))))
+   (:standard -w -32-33-66-39-26-37-34 -warn-error -27))))

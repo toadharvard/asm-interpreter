@@ -7,7 +7,7 @@
   > | a::b -> fac a 
   > | [] -> 1 
   > EOF
-  val f : forall [ ] . (int list -> int)
-  val fac : forall [ ] . (int -> int)
-  val id : forall [ 11; ] . ('_11 -> '_11)
-  val sum : forall [ ] . (int -> (int -> int))
+  val f : forall [ ] . int list -> int
+  val fac : forall [ ] . int -> int
+  val id : forall [ 11; ] . '_11 -> '_11
+  val sum : forall [ ] . int -> int -> int

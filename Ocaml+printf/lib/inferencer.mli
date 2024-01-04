@@ -20,6 +20,8 @@ val pp_error : Format.formatter -> error -> unit
 module TypeEnv : sig
   type t
 
+  val std : t
+  val find : t -> string -> Typedtree.scheme option
   val pp_env : Format.formatter -> t -> unit
 end
 

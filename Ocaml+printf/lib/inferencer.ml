@@ -15,7 +15,7 @@ let rec pp_typ ppf = function
   | TPrim s -> Format.fprintf ppf "%s" s
   | TArr (l, r) ->
     (match l, r with
-     | TArr (_, _), _ -> Format.fprintf ppf "(%a) -> %a)" pp_typ l pp_typ r
+     | TArr (_, _), _ -> Format.fprintf ppf "(%a) -> %a" pp_typ l pp_typ r
      | _ -> Format.fprintf ppf "%a -> %a" pp_typ l pp_typ r)
   | TUnit -> Format.fprintf ppf "unit"
   | TTuple l ->

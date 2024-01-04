@@ -20,7 +20,7 @@ let infer_program_and_print_env str =
 
 let%expect_test _ =
   let _ = infer_expr_and_print_typ {|let f x g = g x in f|} in
-  [%expect {| '_5 -> ('_5 -> '_6) -> '_6) |}]
+  [%expect {| '_5 -> ('_5 -> '_6) -> '_6 |}]
 ;;
 
 let%expect_test _ =
@@ -28,12 +28,12 @@ let%expect_test _ =
     infer_expr_and_print_typ
       {|let f x g = g x in let id x = x in let fst x y = x in fst (f id)|}
   in
-  [%expect {| '_10 -> (('_14 -> '_14) -> '_13)) -> '_13) |}]
+  [%expect {| '_10 -> (('_14 -> '_14) -> '_13) -> '_13 |}]
 ;;
 
 let%expect_test _ =
   let _ = infer_expr_and_print_typ {| fun f -> fun x -> f x |} in
-  [%expect {| ('_3 -> '_4) -> '_3 -> '_4) |}]
+  [%expect {| ('_3 -> '_4) -> '_3 -> '_4 |}]
 ;;
 
 let%expect_test _ =

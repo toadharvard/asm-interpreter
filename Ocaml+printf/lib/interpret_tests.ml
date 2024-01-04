@@ -172,5 +172,5 @@ let%expect_test _ =
 
 let%expect_test _ =
   let _ = eval_expr_and_print {|let f x = match x with | h::tl -> 1 in f []|} in
-  [%expect {| Division by zero |}]
+  [%expect {| Matching failure |}]
 ;;

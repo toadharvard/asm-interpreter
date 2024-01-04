@@ -14,5 +14,18 @@
  (instrumentation
   (backend bisect_ppx)))
 
+(executable
+ (name demoInterpreter)
+ (modules demoInterpreter)
+ (public_name demoInterpreter)
+ (libraries ocaml_printf_lib stdio)
+ (instrumentation
+  (backend bisect_ppx)))
+
 (cram
- (deps %{bin:demoParse} %{bin:demoInfer}))
+ (deps %{bin:demoParse} %{bin:demoInfer} %{bin:demoInterpreter}))
+
+(env
+ (dev
+  (flags
+   (:standard -w -32-33-66-39-26-37-34 -warn-error -27))))
