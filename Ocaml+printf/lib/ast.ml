@@ -7,7 +7,7 @@ type fmt_item =
   | FmtChar (** "%c" *)
   | FmtString  (** "%s" *)
   | FmtBool  (** "%B" *)
-  | FmtEmpty of string (** format string without any specifications *)
+  | SimpleStr of string (** format string without any specifications *)
 [@@deriving show { with_path = false }]
 
 type fstring = fmt_item list (** Empty list means empty string *) [@@deriving show { with_path = false }]
@@ -68,17 +68,19 @@ type expr =
   | Expr_tuple of expr list (** (1, a, 'c') *)
   | Expr_seq of expr * expr (** e1; e2 *)
   | Expr_fstring of fstring (* "abc%d %c" *)
-  (* hard-coded supported functions *)
+  (* hard-coded functions *)
   | Expr_printf
+  | Expr_formatted_printf of fstring
   | Expr_format_of_str
   | Expr_get
+  | Expr_length
 [@@deriving show { with_path = false }]
 
 and decl = bool * val_name * expr
 
 type toplevel =
-  | Let_decl of decl
-  | Expr of expr
+  | Let_decl of decl (** let a = 1 *)
+  | Expr of expr (** printf "abc" *)
 [@@deriving show { with_path = false }]
 
 type program = toplevel list [@@deriving show { with_path = false }]
