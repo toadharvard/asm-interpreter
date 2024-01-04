@@ -5,12 +5,13 @@
 type fmt_item =
   | FmtInt (** "%d"*)
   | FmtChar (** "%c" *)
-  | FmtString  (** "%s" *)
-  | FmtBool  (** "%B" *)
+  | FmtString (** "%s" *)
+  | FmtBool (** "%B" *)
   | SimpleStr of string (** format string without any specifications *)
 [@@deriving show { with_path = false }]
 
-type fstring = fmt_item list (** Empty list means empty string *) [@@deriving show { with_path = false }]
+(** Empty list means empty string *)
+type fstring = fmt_item list [@@deriving show { with_path = false }]
 
 type const =
   | Int of int (** 1 *)
@@ -49,8 +50,8 @@ type pattern =
   | Pat_val of val_name (** abc *)
   | Pat_const of const (** 1 *)
   | Pat_tuple of pattern list (** (1, 2) *)
-  | Pat_cons_list of pattern * pattern (* 1::[] or [1;2] *)
-  | Pat_empty_list (* [] *)
+  | Pat_cons_list of pattern * pattern (** 1::[] or [1;2] *)
+  | Pat_empty_list (** [] *)
 [@@deriving show { with_path = false }]
 
 type expr =
@@ -64,16 +65,16 @@ type expr =
   | Expr_let of decl * expr (** let a = 1 in b *)
   | Expr_match of expr * (pattern * expr) list (** match x with | 1 -> 0 | _ -> 1 *)
   | Expr_empty_list (** [] *)
-  | Expr_cons_list of expr * expr (* 1::[] or [1;2] *)
+  | Expr_cons_list of expr * expr (** 1::[] or [1;2] *)
   | Expr_tuple of expr list (** (1, a, 'c') *)
   | Expr_seq of expr * expr (** e1; e2 *)
-  | Expr_fstring of fstring (* "abc%d %c" *)
+  | Expr_fstring of fstring (*** "abc%d %c" *)
   (* hard-coded functions *)
-  | Expr_printf
-  | Expr_formatted_printf of fstring
-  | Expr_format_of_str
-  | Expr_get
-  | Expr_length
+  | Expr_printf (** printf "%c%d abc" *)
+  | Expr_formatted_printf of fstring (** printf "%c%d abc" 'c' 4 *)
+  | Expr_format_of_str (** format_of_string *)
+  | Expr_get (** str.[i] *)
+  | Expr_length (** length str *)
 [@@deriving show { with_path = false }]
 
 and decl = bool * val_name * expr

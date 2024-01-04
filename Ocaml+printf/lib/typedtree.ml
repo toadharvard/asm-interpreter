@@ -3,23 +3,22 @@
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 type typ =
-  | TVar of int
-  | TPrim of string
-  | TArr of typ * typ
-  | TUnit
-  | TTuple of typ list
-  | TList of typ
-  | TFString of typ
+  | TVar of int (** type var *)
+  | TPrim of string (** ground type *)
+  | TArr of typ * typ (** function type *)
+  | TUnit (** unit *)
+  | TTuple of typ list (** tuple type *)
+  | TList of typ (** list type *)
+  | TFString of typ (** example: "%d%s" has type TFString (int -> char -> unit) *)
 [@@deriving show { with_path = false }]
 
 module TypeVarSet = struct
   include Stdlib.Set.Make (Int)
 
-  (* TODO: make more pretty *)
   let pp ppf s =
-    Format.fprintf ppf "[ ";
+    Format.printf "[ ";
     iter (Format.fprintf ppf "%d; ") s;
-    Format.fprintf ppf "]"
+    Format.printf "]"
   ;;
 end
 
