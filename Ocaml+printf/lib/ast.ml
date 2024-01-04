@@ -8,21 +8,21 @@ type fmt_item =
   | FmtString  (** "%s" *)
   | FmtBool  (** "%B" *)
   | FmtEmpty of string (** format string without any specifications *)
-[@@deriving eq, show { with_path = false }]
+[@@deriving show { with_path = false }]
 
-type fstring = fmt_item list (** Empty list means empty string *) [@@deriving eq, show { with_path = false }]
+type fstring = fmt_item list (** Empty list means empty string *) [@@deriving show { with_path = false }]
 
 type const =
   | Int of int (** 1 *)
   | Bool of bool (** true *)
   | Char of char (** 'a' *)
   | String of string (** "abc" *)
-[@@deriving eq, show { with_path = false }]
+[@@deriving show { with_path = false }]
 
 type un_op =
   | Un_plus (** + *)
   | Un_minus (** - *)
-[@@deriving eq, show { with_path = false }]
+[@@deriving show { with_path = false }]
 
 type bin_op =
   | Add (** + *)
@@ -39,10 +39,10 @@ type bin_op =
   | Or (** || *)
   | Concat (** ^ *)
   | Concat_format (** ^^ *)
-[@@deriving eq, show { with_path = false }]
+[@@deriving show { with_path = false }]
 
 type val_name = LCIdent of string (** variable_name1 *)
-[@@deriving eq, show { with_path = false }]
+[@@deriving show { with_path = false }]
 
 type pattern =
   | Pat_any (** _ *)
@@ -51,7 +51,7 @@ type pattern =
   | Pat_tuple of pattern list (** (1, 2) *)
   | Pat_cons_list of pattern * pattern (* 1::[] or [1;2] *)
   | Pat_empty_list (* [] *)
-[@@deriving eq, show { with_path = false }]
+[@@deriving show { with_path = false }]
 
 type expr =
   | Expr_const of const (** 1 *)
@@ -71,15 +71,13 @@ type expr =
   (* hard-coded supported functions *)
   | Expr_printf
   | Expr_get
-[@@deriving eq, show { with_path = false }]
+[@@deriving show { with_path = false }]
 
 and decl = bool * val_name * expr
-(* type let_decl = Let_decl of decl  [let x = 1] *)
-(* [@@deriving eq, show { with_path = false }] *)
 
 type toplevel =
   | Let_decl of decl
   | Expr of expr
-[@@deriving eq, show { with_path = false }]
+[@@deriving show { with_path = false }]
 
-type program = toplevel list [@@deriving eq, show { with_path = false }]
+type program = toplevel list [@@deriving show { with_path = false }]
