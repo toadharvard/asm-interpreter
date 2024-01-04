@@ -5,7 +5,9 @@
 open Ocaml_printf_lib
 
 let parse_and_print str =
-  Format.printf "%a" Ast.pp_program (Result.get_ok (Parser.parse_program str))
+  match Parser.parse_program str with
+  | Result.Ok program -> Format.printf "%a\n" Ast.pp_program program
+  | Result.Error _ -> Format.printf "Parsing error\n"
 ;;
 
 let%expect_test _ =
@@ -192,7 +194,7 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  parse_and_print "let k = let f ((t::1::(1,2)::y), 3) = a in f";
+  parse_and_print {|let k = let f ((t::1::(1,2)::y), 3) = a in f|};
   [%expect
     {|
     [(Let_decl
@@ -216,7 +218,7 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  parse_and_print "let f = printf \"sdfsdf\"; prtinf \"sfsf%c %d\";; [323;32]";
+  parse_and_print {|let f = printf "sdfsdf"; prtinf "sfsf%c %d";; [323;32]|};
   [%expect
     {|
     [(Let_decl
@@ -234,7 +236,7 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  parse_and_print "1; 2 let x = 1;; let a = 2; 3";
+  parse_and_print {|1; 2 let x = 1;; let a = 2; 3|};
   [%expect
     {|
     [(Expr (Expr_seq ((Expr_const (Int 1)), (Expr_const (Int 2)))));
@@ -246,26 +248,67 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  let _ = parse_and_print {| let str = "sdfs"; printf "%s" str |} in
-  [%expect {|
+  let _ = parse_and_print {| let str = "sdfs"; printf "%s" str; [] |} in
+  [%expect
+    {|
     [(Let_decl
         (false, (LCIdent "str"),
          (Expr_seq ((Expr_const (String "sdfs")),
-            (Expr_app (
-               (Expr_app ((Expr_val (LCIdent "printf")),
-                  (Expr_const (String "%s")))),
-               (Expr_val (LCIdent "str"))))
+            (Expr_seq (
+               (Expr_app (
+                  (Expr_app ((Expr_val (LCIdent "printf")),
+                     (Expr_const (String "%s")))),
+                  (Expr_val (LCIdent "str")))),
+               Expr_empty_list))
             ))))
       ] |}]
 ;;
 
 let%expect_test _ =
   let _ = parse_and_print {| printf "%s" str |} in
-  [%expect {|
+  [%expect
+    {|
     [(Expr
         (Expr_app (
            (Expr_app ((Expr_val (LCIdent "printf")), (Expr_const (String "%s")))),
            (Expr_val (LCIdent "str")))))
+      ] |}]
+;;
+
+let%expect_test _ =
+  let _ = parse_and_print {|let str = "\n\\\"\t\n"|} in
+  [%expect
+    {|
+    [(Let_decl (false, (LCIdent "str"), (Expr_const (String "\n\\\"\t\n"))))] |}]
+;;
+
+(* errors*)
+
+let%expect_test _ =
+  let _ = parse_and_print {| let a = 2 +- 3;; let b =+2  |} in
+  [%expect {|
+    Parsing error |}]
+;;
+
+let%expect_test _ =
+  let _ = parse_and_print {|let str = "\x"|} in
+  [%expect {|
+    Parsing error |}]
+;;
+
+let%expect_test _ =
+  let _ = parse_and_print {|let a = let str = "sdfs\n" in let id = 2 in str.[id]|} in
+  [%expect {|
+    [(Let_decl
+        (false, (LCIdent "a"),
+         (Expr_let ((false, (LCIdent "str"), (Expr_const (String "sdfs\n"))),
+            (Expr_let ((false, (LCIdent "id"), (Expr_const (Int 2))),
+               (Expr_app (
+                  (Expr_app ((Expr_val (LCIdent "get")),
+                     (Expr_val (LCIdent "str")))),
+                  (Expr_val (LCIdent "id"))))
+               ))
+            ))))
       ] |}]
 ;;
 

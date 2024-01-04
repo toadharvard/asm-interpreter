@@ -108,7 +108,7 @@ let const_char =
          | {|\ |} -> advance 2 *> return '\ '
          | ({|\x|} | {|\o|} | _) when is_digit s.[1] ->
            fail "Escape sequense is not supported"
-         | _ -> fail "Illegal backslash escape in string or character")
+         | _ -> fail "Illegal backslash escape in character")
       | _ -> advance 1 *> return c)
   <* char '\''
   >>| fun c -> Char c
@@ -122,7 +122,20 @@ let const_string =
     >>= fun c ->
     match c with
     | '"' -> advance 1 *> return acc
-    | '\\' -> take 2 >>= fun t -> helper (acc ^ t)
+    | '\\' ->
+      take 2
+      >>= fun t ->
+      (match t with
+       | {|\n|} -> helper (acc ^ "\n")
+       | {|\t|} -> helper (acc ^ "\t")
+       | {|\b|} -> helper (acc ^ "\b")
+       | {|\r|} -> helper (acc ^ "\r")
+       | {|\\|} -> helper (acc ^ "\\")
+       | {|\'|} -> helper (acc ^ "\'")
+       | {|\"|} -> helper (acc ^ "\"")
+       | {|\ |} -> helper (acc ^ " ")
+       | {|\x|} | {|\o|} -> fail "Escape sequense is not supported"
+       | _ -> fail "Illegal backslash escape in string")
     | _ -> take 1 >>= fun t -> helper (acc ^ t)
   in
   char '\"' *> helper "" >>| fun s -> String s
