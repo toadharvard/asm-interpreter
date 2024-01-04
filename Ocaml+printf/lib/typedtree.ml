@@ -15,6 +15,7 @@ type typ =
 module TypeVarSet = struct
   include Stdlib.Set.Make (Int)
 
+  (* TODO: make more pretty *)
   let pp ppf s =
     Format.fprintf ppf "[ ";
     iter (Format.fprintf ppf "%d; ") s;
@@ -22,12 +23,14 @@ module TypeVarSet = struct
   ;;
 end
 
-type binder_set = TypeVarSet.t [@@deriving eq, show { with_path = false }]
-type scheme = Scheme of binder_set * typ [@@deriving eq, show { with_path = false }]
+type scheme = Scheme of TypeVarSet.t * typ [@@deriving eq, show { with_path = false }]
 
+let type_var x = TVar x
 let int_typ = TPrim "int"
 let bool_typ = TPrim "bool"
 let char_typ = TPrim "char"
 let string_typ = TPrim "string"
+let unit_typ = TUnit
+let format_typ x = TFString x
 let arrow l r = TArr (l, r)
 let ( @-> ) = arrow

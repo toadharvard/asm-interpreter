@@ -6,6 +6,8 @@ val pp_typ : Format.formatter -> Typedtree.typ -> unit
 
 type error =
   [ `Impossible_state of string
+  | `Invalid_format_str of string
+  | `Ivalid_format_concat of Typedtree.typ * Typedtree.typ
   | `Multiple_bound of string
   | `No_variable of string
   | `Occurs_check
@@ -21,5 +23,5 @@ module TypeEnv : sig
   val pp_env : Format.formatter -> t -> unit
 end
 
-val run_infer_expr : Ast.expr -> (Typedtree.typ, error) result
-val run_infer_program : Ast.let_decl list -> (TypeEnv.t, error) result
+val run_infer_expr : Ast.expr -> (Typedtree.typ * Ast.expr, error) result
+val run_infer_program : Ast.program -> (TypeEnv.t * Ast.program, error) result

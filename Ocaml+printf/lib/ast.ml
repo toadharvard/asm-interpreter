@@ -3,10 +3,10 @@
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 type fmt_item =
-  | FmtInt of string (** "%d"*)
-  | FmtChar of string (** "%c" *)
-  | FmtString of string (** "%s" *)
-  | FmtBool of string (** "%B" *)
+  | FmtInt (** "%d"*)
+  | FmtChar (** "%c" *)
+  | FmtString  (** "%s" *)
+  | FmtBool  (** "%B" *)
   | FmtEmpty of string (** format string without any specifications *)
 [@@deriving eq, show { with_path = false }]
 

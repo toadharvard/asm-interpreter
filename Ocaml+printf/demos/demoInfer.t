@@ -9,5 +9,5 @@
   > EOF
   val f : forall [ ] . (int list -> int)
   val fac : forall [ ] . (int -> int)
-  val id : forall [ 11; ] . ('_11 -> '_11)
+  val id : forall [ 12; ] . ('_12 -> '_12)
   val sum : forall [ ] . (int -> (int -> int))
