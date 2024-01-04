@@ -374,7 +374,7 @@ let get_by_id expr =
         take_whitespaces *> char '.' *> take_whitespaces *> char '[' *> expr
         >>= fun id ->
         take_whitespaces *> char ']'
-        >>| fun _ -> Expr_app (Expr_app (Expr_val (LCIdent "get"), str), id))
+        >>| fun _ -> Expr_app (Expr_app (Expr_val (LCIdent "get"), id), str))
   <|> expr
 ;;
 
