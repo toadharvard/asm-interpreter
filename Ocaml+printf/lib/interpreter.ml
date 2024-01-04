@@ -25,6 +25,8 @@ type value =
   | VChar of char
   | VString of string
   | VFormat_string of Ast.fstring
+  (** string option is None when function is non-recursive
+      and Some _ when function is recursive *)
   | VFun of string option * Ast.pattern * Ast.expr * env_values
   | VTuple of value list
   | VList of value list
@@ -381,8 +383,8 @@ let eval_expr =
       let* v = helper env e in
       eval_match env v list
     | Expr_seq (e1, e2) ->
-      let* _ = helper env e1 in
       let* v2 = helper env e2 in
+      let* _ = helper env e1 in
       return v2
       (* below are the functions with hardcoded implementation *)
     | Expr_format_of_str ->
