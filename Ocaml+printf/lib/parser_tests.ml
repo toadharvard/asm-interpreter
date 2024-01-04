@@ -5,7 +5,7 @@
 open Ocaml_printf_lib
 
 let parse_and_print str =
-  match Parser.parse_program str with
+  match Parser.run_parser_program str with
   | Result.Ok program -> Format.printf "%a\n" Ast.pp_program program
   | Result.Error _ -> Format.printf "Parsing error\n"
 ;;
@@ -298,15 +298,16 @@ let%expect_test _ =
 
 let%expect_test _ =
   let _ = parse_and_print {|let a = let str = "sdfs\n" in let id = 2 in str.[id]|} in
-  [%expect {|
+  [%expect
+    {|
     [(Let_decl
         (false, (LCIdent "a"),
          (Expr_let ((false, (LCIdent "str"), (Expr_const (String "sdfs\n"))),
             (Expr_let ((false, (LCIdent "id"), (Expr_const (Int 2))),
                (Expr_app (
                   (Expr_app ((Expr_val (LCIdent "get")),
-                     (Expr_val (LCIdent "str")))),
-                  (Expr_val (LCIdent "id"))))
+                     (Expr_val (LCIdent "id")))),
+                  (Expr_val (LCIdent "str"))))
                ))
             ))))
       ] |}]

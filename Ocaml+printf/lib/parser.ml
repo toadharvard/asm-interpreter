@@ -435,5 +435,5 @@ let program_parser : program t =
   many1 (empty_decl *> (decl <|> expr_top) <* empty_decl) <* take_whitespaces
 ;;
 
-let parse_program s = parse_string ~consume:All program_parser s
-let parse_expression s = parse_string ~consume:All expr s
+let run_parser_program s = parse_string ~consume:All program_parser s
+let run_parser_expr s = parse_string ~consume:All expr s
