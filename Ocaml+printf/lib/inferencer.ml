@@ -41,7 +41,7 @@ type error =
   | `Unexpected_expr of Ast.expr
   ]
 
-let pp_error ppf : error -> _ = function
+let pp_error ppf : error -> unit = function
   | `Occurs_check -> Format.fprintf ppf {|Occurs check failed|}
   | `No_variable s -> Format.fprintf ppf {|Undefined variable '%s'|} s
   | `Unification_failed (l, r) ->
@@ -318,12 +318,9 @@ end = struct
 
   let std =
     let init_env = empty in
-    (* let init_env =
-      update
-        init_env
-        "con"
-        (Scheme (TypeVarSet.empty, string_typ @-> string_typ @-> string_typ))
-    in *)
+    let init_env =
+      update init_env "length" (Scheme (TypeVarSet.empty, string_typ @-> int_typ))
+    in
     let init_env =
       update
         init_env
@@ -417,15 +414,15 @@ let convert_to_format s : Ast.fstring option =
       in
       (match type_spec with
        | Some ty ->
-         let ty = if String.length text = 0 then [ ty ] else ty :: [ FmtEmpty text ] in
+         let ty = if String.length text = 0 then [ ty ] else ty :: [ SimpleStr text ] in
          if i > 0 then helper (List.append ty acc) (i - 1) else Some (List.append ty acc)
        | None -> None)
     | Some _ -> None
-    | None -> Some (FmtEmpty (String.sub s 0 (j + 1)) :: acc)
+    | None -> Some (SimpleStr (String.sub s 0 (j + 1)) :: acc)
   in
   if String.exists (fun c -> c = '%') s
   then helper [] (String.length s - 1)
-  else Some [ Ast.FmtEmpty s ]
+  else Some [ Ast.SimpleStr s ]
 ;;
 
 let rec infer_format_type = function
@@ -436,7 +433,7 @@ let rec infer_format_type = function
      | Ast.FmtInt -> int_typ @-> infer_format_type tl
      | Ast.FmtChar -> char_typ @-> infer_format_type tl
      | Ast.FmtString -> string_typ @-> infer_format_type tl
-     | Ast.FmtEmpty _ -> infer_format_type tl)
+     | Ast.SimpleStr _ -> infer_format_type tl)
 ;;
 
 let infer_format_concat fstring1 fstring2 =
@@ -598,7 +595,7 @@ and infer_expr env expr =
     let* sub2, typ2, expr = infer_expr (TypeEnv.apply sub1 env) e in
     let arg_type = Subst.apply sub2 typ1 in
     let* final_sub = Subst.compose sub1 sub2 in
-    return (final_sub, arg_type @-> typ2, expr)
+    return (final_sub, arg_type @-> typ2, Expr_fun (pattern, expr))
   | Expr_app (e1, e2) -> infer_app env e1 e2
   | Expr_let ((false, LCIdent name, e1), e2) ->
     let* sub1, typ1, expr1 = infer_expr env e1 in
