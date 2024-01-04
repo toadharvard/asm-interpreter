@@ -7,7 +7,7 @@ open Ocaml_printf_lib
 let parse_and_print str =
   match Parser.run_parser_program str with
   | Result.Ok program -> Format.printf "%a\n" Ast.pp_program program
-  | Result.Error _ -> Format.printf "Parsing error\n"
+  | Result.Error str -> Format.printf "Parsing error%s\n" str
 ;;
 
 let%expect_test _ =
@@ -248,7 +248,7 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  let _ = parse_and_print {| let str = "sdfs"; printf "%s" str; [] |} in
+  let _ = parse_and_print {| let str = "sdfs"; printf "%c" str.[0]; [] |} in
   [%expect
     {|
     [(Let_decl
@@ -257,8 +257,12 @@ let%expect_test _ =
             (Expr_seq (
                (Expr_app (
                   (Expr_app ((Expr_val (LCIdent "printf")),
-                     (Expr_const (String "%s")))),
-                  (Expr_val (LCIdent "str")))),
+                     (Expr_const (String "%c")))),
+                  (Expr_app (
+                     (Expr_app ((Expr_val (LCIdent "get")),
+                        (Expr_val (LCIdent "str")))),
+                     (Expr_const (Int 0))))
+                  )),
                Expr_empty_list))
             ))))
       ] |}]
@@ -287,40 +291,11 @@ let%expect_test _ =
 let%expect_test _ =
   let _ = parse_and_print {| let a = 2 +- 3;; let b =+2  |} in
   [%expect {|
-    Parsing error |}]
+    Parsing error: end_of_input |}]
 ;;
 
 let%expect_test _ =
   let _ = parse_and_print {|let str = "\x"|} in
   [%expect {|
-    Parsing error |}]
+    Parsing error: no more choices |}]
 ;;
-
-let%expect_test _ =
-  let _ = parse_and_print {|let a = let str = "sdfs\n" in let id = 2 in str.[id]|} in
-  [%expect
-    {|
-    [(Let_decl
-        (false, (LCIdent "a"),
-         (Expr_let ((false, (LCIdent "str"), (Expr_const (String "sdfs\n"))),
-            (Expr_let ((false, (LCIdent "id"), (Expr_const (Int 2))),
-               (Expr_app (
-                  (Expr_app ((Expr_val (LCIdent "get")),
-                     (Expr_val (LCIdent "id")))),
-                  (Expr_val (LCIdent "str"))))
-               ))
-            ))))
-      ] |}]
-;;
-
-(* let%expect_test _ =
-   parse_and_print "fun x y z -> x + y + z";
-   [%expect
-    {|
-    [(Expr (Expr_seq ((Expr_const (Int 1)), (Expr_const (Int 2)))));
-      (Let_decl (false, (LCIdent "x"), (Expr_const (Int 1))));
-      (Let_decl
-         (false, (LCIdent "a"),
-          (Expr_seq ((Expr_const (Int 2)), (Expr_const (Int 3))))))
-      ] |}]
-   ;; *)

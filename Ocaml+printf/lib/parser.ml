@@ -82,8 +82,8 @@ let expr_integer = take_whitespaces *> const_integer >>| fun x -> Expr_const x
 let const_bool =
   token1
   >>= function
-  | "false" -> return (Bool false)
-  | "true" -> return (Bool true)
+  | "false" -> return @@ Bool false
+  | "true" -> return @@ Bool true
   | _ -> fail "Bool constant expected"
 ;;
 
@@ -119,13 +119,11 @@ let expr_char = take_whitespaces *> const_char >>| fun c -> Expr_const c
 let const_string =
   let rec helper acc =
     peek_char_fail
-    >>= fun c ->
-    match c with
+    >>= function
     | '"' -> advance 1 *> return acc
     | '\\' ->
       take 2
-      >>= fun t ->
-      (match t with
+      >>= (function
        | {|\n|} -> helper (acc ^ "\n")
        | {|\t|} -> helper (acc ^ "\t")
        | {|\b|} -> helper (acc ^ "\b")
@@ -134,8 +132,7 @@ let const_string =
        | {|\'|} -> helper (acc ^ "\'")
        | {|\"|} -> helper (acc ^ "\"")
        | {|\ |} -> helper (acc ^ " ")
-       | {|\x|} | {|\o|} -> fail "Escape sequense is not supported"
-       | _ -> fail "Illegal backslash escape in string")
+       | _ -> fail "Illegal (or not supported) backslash escape in string")
     | _ -> take 1 >>= fun t -> helper (acc ^ t)
   in
   char '\"' *> helper "" >>| fun s -> String s
@@ -295,7 +292,7 @@ let parse_list expr =
 
 let parse_any_pat =
   take_whitespaces *> token1
-  >>= fun s -> if s = "_" then return Pat_any else fail "Pattern \"any\" expected"
+  >>= fun s -> if s = "_" then return Pat_any else fail {|Pattern "any" expected|}
 ;;
 
 let parse_val_pat = take_whitespaces *> valname >>| fun s -> Pat_val s
@@ -344,6 +341,7 @@ let expr_match expr =
   >>= fun e -> keyword "with" *> many1 case >>| fun l -> Expr_match (e, l)
 ;;
 
+(* for parsing arguments and body of function *)
 let fun_helper expr sep =
   let rec helper e = function
     | [] -> e
@@ -360,7 +358,7 @@ let let_in expr =
   keyword "let"
   *> lift4
        (fun rec_flag name expr1 expr2 -> Expr_let ((rec_flag, name, expr1), expr2))
-       (option false (whitespace1_keyword "rec" >>| fun s -> String.equal s "rec"))
+       (option false (whitespace1_keyword "rec" >>| fun _ -> true))
        (take_whitespaces1 *> valname)
        (take_whitespaces *> op_parse_helper "=" *> expr
         <|> take_whitespaces1 *> fun_helper expr "="
@@ -420,7 +418,7 @@ let decl =
   keyword "let"
   *> lift3
        (fun rec_flag name expr -> Let_decl (rec_flag, name, expr))
-       (option false (whitespace1_keyword "rec" >>| fun s -> String.equal s "rec"))
+       (option false (whitespace1_keyword "rec" >>| fun _ -> true))
        (take_whitespaces1 *> valname)
        (take_whitespaces *> op_parse_helper "=" *> expr
         <|> take_whitespaces1 *> fun_helper expr "=")

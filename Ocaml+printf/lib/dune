@@ -22,4 +22,4 @@
 (env
  (dev
   (flags
-   (:standard -w -32-33-66-39-26-37-34 -warn-error -27))))
+   (:standard -w -32))))
