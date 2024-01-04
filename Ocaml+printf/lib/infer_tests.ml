@@ -5,22 +5,22 @@
 open Ocaml_printf_lib
 
 let infer_expr_and_print_typ str =
-  let parsed = Result.get_ok (Parser.parse_expression str) in
+  let parsed = Result.get_ok (Parser.run_parser_expr str) in
   match Inferencer.run_infer_expr parsed with
   | Ok (ty, _) -> Format.printf "%a" Inferencer.pp_typ ty
   | Error err -> Format.printf "%a" Inferencer.pp_error err
 ;;
 
-let infer_program_and_print_ast str =
-  let parsed = Result.get_ok (Parser.parse_program str) in
+let infer_program_and_print_env str =
+  let parsed = Result.get_ok (Parser.run_parser_program str) in
   match Inferencer.run_infer_program parsed with
-  | Ok (ty, _) -> Format.printf "%a" Inferencer.TypeEnv.pp_env ty
+  | Ok (env, _) -> Format.printf "%a" Inferencer.TypeEnv.pp_env env
   | Error err -> Format.printf "%a" Inferencer.pp_error err
 ;;
 
 let%expect_test _ =
   let _ = infer_expr_and_print_typ {|let f x g = g x in f|} in
-  [%expect {| ('_6 -> (('_6 -> '_7) -> '_7)) |}]
+  [%expect {| ('_5 -> (('_5 -> '_6) -> '_6)) |}]
 ;;
 
 let%expect_test _ =
@@ -28,19 +28,19 @@ let%expect_test _ =
     infer_expr_and_print_typ
       {|let f x g = g x in let id x = x in let fst x y = x in fst (f id)|}
   in
-  [%expect {| ('_11 -> ((('_15 -> '_15) -> '_14) -> '_14)) |}]
+  [%expect {| ('_10 -> ((('_14 -> '_14) -> '_13) -> '_13)) |}]
 ;;
 
 let%expect_test _ =
   let _ = infer_expr_and_print_typ {| fun f -> fun x -> f x |} in
-  [%expect {| (('_4 -> '_5) -> ('_4 -> '_5)) |}]
+  [%expect {| (('_3 -> '_4) -> ('_3 -> '_4)) |}]
 ;;
 
 let%expect_test _ =
   let _ =
     infer_expr_and_print_typ {|let id x = x in if (id 2 < 3) then id else (fun t -> t)|}
   in
-  [%expect {| ('_8 -> '_8) |}]
+  [%expect {| ('_7 -> '_7) |}]
 ;;
 
 let%expect_test _ =
@@ -50,7 +50,7 @@ let%expect_test _ =
 
 let%expect_test _ =
   let _ = infer_expr_and_print_typ {|fun (a,b,c,d) -> a + d|} in
-  [%expect {| ((int * '_5 * '_4 * int) -> int) |}]
+  [%expect {| ((int * '_4 * '_3 * int) -> int) |}]
 ;;
 
 let%expect_test _ =
@@ -65,12 +65,12 @@ let%expect_test _ =
 
 let%expect_test _ =
   let _ = infer_expr_and_print_typ {|let f (1,_,y) = y in f |} in
-  [%expect {| ((int * '_6 * '_5) -> '_5) |}]
+  [%expect {| ((int * '_5 * '_4) -> '_4) |}]
 ;;
 
 let%expect_test _ =
   let _ = infer_expr_and_print_typ {|let a = [] in a |} in
-  [%expect {| '_4 list |}]
+  [%expect {| '_3 list |}]
 ;;
 
 let%expect_test _ =
@@ -149,18 +149,52 @@ let%expect_test _ =
     (int -> (bool -> (string -> unit))) |}]
 ;;
 
-(* Incorrect *)
+let%expect_test _ =
+  let _ =
+    infer_program_and_print_env
+      {|let a =  
+        let rec helper acc list =
+          match list with
+          | [] -> acc
+          | h :: tl -> helper (h :: acc) tl
+        in
+        let reversed_int = helper [] [1;2;3;4;5] in
+        let reversed_str = helper [] ["1";"2";"3";"4";"5"] in
+      (reversed_int, reversed_str) |}
+  in
+  [%expect {|
+    val a : forall [ ] . (int list * string list) |}]
+;;
 
-(* TODO: printf*)
-(* let%expect_test _ =
-  let _ = infer_expr_and_print_typ {|let f x = x + 1; x ^ "str" in f |} in
-  [%expect {| Unification failed on int and string |}]
-;; *)
+let%expect_test _ =
+  let _ =
+    infer_program_and_print_env
+      {|let fmt = "%d%B" ^^ "%c%s";;
+        printf fmt 1 true 'a' "abc"|}
+  in
+  [%expect
+    {|
+    val fmt : forall [ ] . (int -> (bool -> (char -> (string -> unit)))) format_string |}]
+;;
+
+(* Incorrect *)
 
 let%expect_test _ =
   let _ = infer_expr_and_print_typ {| let s = "123" in (s ^^ "%d") |} in
   [%expect
     {| Invalid format concatination of "string" and "(int -> unit) format_string" |}]
+;;
+
+let%expect_test _ =
+  let _ = infer_expr_and_print_typ {| printf "%" |} in
+  [%expect
+    {| Invalid format string "%" |}]
+;;
+
+let%expect_test _ =
+  let _ = infer_expr_and_print_typ {| fun (a,a) -> a + a |} in
+  [%expect
+    {| Variable a is bound several times in matching |}]
 ;;
 
 let%expect_test _ =
@@ -192,7 +226,7 @@ let%expect_test _ =
 
 let%expect_test _ =
   let _ = infer_expr_and_print_typ {|let f (a::1) = 0 in f |} in
-  [%expect {| Incorrect pattern matching, expected '_0 list, found int |}]
+  [%expect {| Unification failed on int and '_3 list |}]
 ;;
 
 let%expect_test _ =

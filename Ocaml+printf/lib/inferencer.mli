@@ -11,7 +11,6 @@ type error =
   | `Multiple_bound of string
   | `No_variable of string
   | `Occurs_check
-  | `Pattern_matching of Typedtree.typ * Typedtree.typ
   | `Unification_failed of Typedtree.typ * Typedtree.typ
   | `Unexpected_expr of Ast.expr
   ]
