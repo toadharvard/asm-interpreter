@@ -25,8 +25,8 @@ let rec pp_typ ppf = function
          (fun _ item -> Format.fprintf ppf " * %a" pp_typ item)
          (Format.fprintf ppf "(%a" pp_typ h)
          tl;
-       Format.printf ")"
-     | _ -> Format.printf "Impossible state")
+       Format.fprintf ppf ")"
+     | _ -> Format.fprintf ppf "Impossible state")
   | TList t -> Format.fprintf ppf "%a list" pp_typ t
   | TFString t -> Format.fprintf ppf "%a format_string" pp_typ t
 ;;
@@ -48,7 +48,7 @@ let pp_error ppf : error -> unit = function
   | `Unification_failed (l, r) ->
     Format.fprintf ppf {|Unification failed on %a and %a|} pp_typ l pp_typ r
   | `Multiple_bound s ->
-    Format.printf {|Variable %s is bound several times in matching|} s
+    Format.fprintf ppf {|Variable %s is bound several times in matching|} s
   | `Invalid_format_str s -> Format.fprintf ppf {|Invalid format string "%s"|} s
   | `Ivalid_format_concat (t1, t2) ->
     Format.fprintf
@@ -185,6 +185,7 @@ module Subst : sig
   val remove : t -> int -> t
   val apply : t -> typ -> typ
   val unify : typ -> typ -> t R.t
+  val pp_subst : Format.formatter -> t -> unit
 
   (** Compositon of substitutions *)
   val compose : t -> t -> t R.t
@@ -264,6 +265,12 @@ end = struct
   and compose s1 s2 = RMap.fold s2 ~init:(return s1) ~f:extend
 
   let compose_all ss = RList.fold_left ss ~init:(return empty) ~f:compose
+
+  let pp_subst ppf sub =
+    Base.Map.iteri sub ~f:(fun ~key ~data ->
+      Stdlib.Format.fprintf ppf "[%d = %a] " key pp_typ data);
+    Stdlib.Format.fprintf ppf "\n"
+  ;;
 end
 
 module Scheme = struct
@@ -345,10 +352,10 @@ end = struct
     Map.iteri env ~f:(fun ~key ~data ->
       match find std key with
       | None ->
-        Stdlib.Format.printf "val %s : " key;
+        Stdlib.Format.fprintf ppf "val %s : " key;
         Scheme.pp_scheme ppf data;
-        Stdlib.Format.printf "\n"
-      | Some _ -> Stdlib.Format.printf "")
+        Stdlib.Format.fprintf ppf "\n"
+      | Some _ -> Stdlib.Format.fprintf ppf "")
   ;;
 end
 
