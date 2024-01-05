@@ -259,3 +259,26 @@ let%expect_test _ =
   let _ = infer_expr_and_print_typ {|fun f x -> x x|} in
   [%expect {| Occurs check failed |}]
 ;;
+
+let%expect_test _ =
+  let _ = infer_expr_and_print_typ {|
+  let rec fix f x = f (fix f) x in 
+  fix 
+  |} in
+  [%expect {| (('_8 -> '_9) -> '_8 -> '_9) -> '_8 -> '_9 |}]
+;;
+
+let%expect_test "Formatted Logging" =
+  let _ =
+    infer_expr_and_print_typ
+      {| 
+      let log ppf  = 
+        if true then printf ppf
+        else  printf ppf
+      in 
+      log "%s" "asdf"
+        |}
+  in
+  [%expect {|
+    Occurs check failed |}]
+;;
