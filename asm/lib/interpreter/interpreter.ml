@@ -103,20 +103,26 @@ let eval_statement = function
        write_xmm_reg r1 (high1 * high2, low1 * low2))
   | Instruction (Pinsrq, args) ->
     (match args with
-     | Reg_128_reg_64_imm_a (r1, r2, Imm_int 0) ->
+     | Reg_128_reg_64_imm_a (r1, r2, Imm_int i) when (i land 1) = 0 ->
        let* high, _low = read_xmm_reg r1 in
        let* v2 = read_reg r2 in
        write_xmm_reg r1 (high, v2)
-     | Reg_128_reg_64_imm_a (r1, r2, Imm_int 1) ->
+     | Reg_128_reg_64_imm_a (r1, r2, Imm_int i) when (i land 1) = 1 ->
        let* _high, low = read_xmm_reg r1 in
        let* v2 = read_reg r2 in
        write_xmm_reg r1 (v2, low)
-     | _ -> fail "Undefined instruction")
+     | _ -> fail "Unsupported instruction operands")
   | Instruction (Movapd, args) ->
     (match args with
      | Reg_128_reg_128 (r1, r2) ->
        let* high1, low1 = read_xmm_reg r2 in
        write_xmm_reg r1 (high1, low1))
+  | Instruction (Haddpd, args) ->
+    (match args with
+     | Reg_128_reg_128 (r1, r2) ->
+       let* high1, low1 = read_xmm_reg r1 in
+       let* high2, low2 = read_xmm_reg r2 in
+       write_xmm_reg r1 (high2 + low2, high1 + low1))
   | Directive _ -> ignore
   | Label_decl _ -> ignore
 ;;
@@ -147,8 +153,8 @@ let get_next_statement_index ast current_index =
       return (index + 1)
     | None -> fail "Can't jump to undefined label"
   in
-  let* state = read in
-  match state.label_to_jmp with
+  let* maybe_label = read_label_to_jmp in
+  match maybe_label with
   | Some label_to_jmp -> handle_label_jump label_to_jmp
   | None -> return (current_index + 1)
 ;;

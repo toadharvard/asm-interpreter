@@ -83,6 +83,7 @@ type _ mnemonic =
   | Pinsrq : [< `Reg_128_reg_64_imm_a ] mnemonic
   | Addpd : [< `Reg_128_reg_128 ] mnemonic
   | Mulpd : [< `Reg_128_reg_128 ] mnemonic
+  | Haddpd : [< `Reg_128_reg_128 ] mnemonic
   (** Not sure that these instructions can really be used with integer values in xmm registers. The specification of the instructions is a complete mess*)
 [@@deriving variants]
 

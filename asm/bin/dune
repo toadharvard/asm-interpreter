@@ -15,4 +15,10 @@
   (backend bisect_ppx)))
 
 (cram
- (deps ./demoParser.exe ./demoInterpreter.exe))
+ (deps 
+ ./demoParser.exe
+ ./demoInterpreter.exe
+ ./sources/fib.asm
+ ./sources/scalar.asm
+ ./sources/matrix.asm
+ ))
