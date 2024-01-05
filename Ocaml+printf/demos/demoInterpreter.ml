@@ -53,8 +53,8 @@ let pp_typ ppf typ =
       (match l with
        | h :: tl ->
          List.fold_left
-           (fun _ item -> Format.fprintf ppf " * %a" pp_typ item)
-           (Format.fprintf ppf "(%a" pp_typ h)
+           (fun _ item -> Format.fprintf ppf " * %a" helper item)
+           (Format.fprintf ppf "(%a" helper h)
            tl;
          Format.fprintf ppf ")"
        | _ -> Format.fprintf ppf "Impossible state")

@@ -10,12 +10,13 @@
 
 open Typedtree
 
+(* this pp used for tests *)
 let rec pp_typ ppf = function
   | TVar n -> Format.fprintf ppf "'_%d" n
   | TPrim s -> Format.fprintf ppf "%s" s
   | TArr (l, r) ->
-    (match l, r with
-     | TArr (_, _), _ -> Format.fprintf ppf "(%a) -> %a" pp_typ l pp_typ r
+    (match l with
+     | TArr (_, _) -> Format.fprintf ppf "(%a) -> %a" pp_typ l pp_typ r
      | _ -> Format.fprintf ppf "%a -> %a" pp_typ l pp_typ r)
   | TUnit -> Format.fprintf ppf "unit"
   | TTuple l ->

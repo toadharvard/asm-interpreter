@@ -432,7 +432,7 @@ let eval_program prog =
       let* acc = acc in
       let* env, _ = eval_toplevel acc toplevel in
       return env)
-    (return @@ EnvValues.std)
+    (return EnvValues.std)
     prog
 ;;
 

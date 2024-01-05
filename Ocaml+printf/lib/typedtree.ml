@@ -10,7 +10,6 @@ type typ =
   | TTuple of typ list (** tuple type *)
   | TList of typ (** list type *)
   | TFString of typ (** example: "%d%s" has type TFString (int -> char -> unit) *)
-[@@deriving show { with_path = false }]
 
 module TypeVarSet = struct
   include Stdlib.Set.Make (Int)
@@ -22,7 +21,7 @@ module TypeVarSet = struct
   ;;
 end
 
-type scheme = Scheme of TypeVarSet.t * typ [@@deriving show { with_path = false }]
+type scheme = Scheme of TypeVarSet.t * typ
 
 let type_var x = TVar x
 let int_typ = TPrim "int"
