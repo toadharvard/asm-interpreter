@@ -39,6 +39,7 @@ let parse_instruction =
     ; gen_instruction "addpd" [ instruction addpd <$> parse_reg_128_reg_128 ]
     ; gen_instruction "pinsrq" [ instruction pinsrq <$> parse_reg_128_reg_64_imm_a ]
     ; gen_instruction "mulpd" [ instruction mulpd <$> parse_reg_128_reg_128 ]
+    ; gen_instruction "haddpd" [ instruction haddpd <$> parse_reg_128_reg_128 ]
     ]
 ;;
 
