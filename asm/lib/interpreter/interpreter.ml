@@ -103,11 +103,11 @@ let eval_statement = function
        write_xmm_reg r1 (high1 * high2, low1 * low2))
   | Instruction (Pinsrq, args) ->
     (match args with
-     | Reg_128_reg_64_imm_a (r1, r2, Imm_int i) when (i land 1) = 0 ->
+     | Reg_128_reg_64_imm_a (r1, r2, Imm_int i) when i land 1 = 0 ->
        let* high, _low = read_xmm_reg r1 in
        let* v2 = read_reg r2 in
        write_xmm_reg r1 (high, v2)
-     | Reg_128_reg_64_imm_a (r1, r2, Imm_int i) when (i land 1) = 1 ->
+     | Reg_128_reg_64_imm_a (r1, r2, Imm_int i) when i land 1 = 1 ->
        let* _high, low = read_xmm_reg r1 in
        let* v2 = read_reg r2 in
        write_xmm_reg r1 (v2, low)
