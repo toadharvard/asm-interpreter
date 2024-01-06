@@ -269,8 +269,7 @@ end = struct
 
   let pp_subst ppf sub =
     Base.Map.iteri sub ~f:(fun ~key ~data ->
-      Stdlib.Format.fprintf ppf "[%d = %a] " key pp_typ data);
-    Stdlib.Format.fprintf ppf "\n"
+      Stdlib.Format.fprintf ppf "[%d = %a] " key pp_typ data)
   ;;
 end
 
@@ -541,8 +540,8 @@ let rec infer_expr env expr =
     return (final_sub, typ2, Expr_let ((true, LCIdent name, expr1), expr2))
   | Expr_ite (e1, e2, e3) ->
     let* sub1, typ1, expr1 = infer_expr env e1 in
-    let* sub2, typ2, expr2 = infer_expr env e2 in
-    let* sub3, typ3, expr3 = infer_expr env e3 in
+    let* sub2, typ2, expr2 = infer_expr (TypeEnv.apply sub1 env) e2 in
+    let* sub3, typ3, expr3 = infer_expr (TypeEnv.apply sub2 env) e3 in
     let* sub_cond = Subst.unify typ1 bool_typ in
     let* sub_branches = Subst.unify typ2 typ3 in
     let* final_sub = Subst.compose_all [ sub1; sub2; sub3; sub_cond; sub_branches ] in
@@ -630,7 +629,7 @@ and infer_bin_op env op e1 e2 =
        | Some fmt_s2 ->
          return (Subst.empty, format_typ (infer_format_type fmt_s2), Expr_fstring fmt_s2)
        | None -> fail @@ `Invalid_format_str s2)
-    | _ -> infer_expr env e2
+    | _ -> infer_expr (TypeEnv.apply sub1 env) e2
   in
   let* op_typ =
     match op with

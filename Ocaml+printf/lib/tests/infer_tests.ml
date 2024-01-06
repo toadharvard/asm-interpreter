@@ -279,7 +279,7 @@ let%expect_test "Formatted Logging" =
       log "%s" "asdf"
         |}
   in
-  [%expect {| Occurs check failed |}]
+  [%expect {| unit |}]
 ;;
 
 let%expect_test "Weird but OK" =
