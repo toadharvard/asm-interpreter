@@ -14,9 +14,7 @@ let rec convert_to_string = function
 ;;
 
 (* this printing method is purely for convenience *)
-let pp_fstring ppf fstring =
-  Format.fprintf ppf {|"%s" format|} (convert_to_string fstring)
-;;
+let pp_fstring ppf fstring = Format.fprintf ppf {|%S format|} (convert_to_string fstring)
 
 type value =
   | VUnit
@@ -97,7 +95,7 @@ module MONAD_WRITE_ERROR : sig
   val bind : 'a t -> ('a -> 'b t) -> 'b t
   val write : string -> unit t
   val fail : error -> 'a t
-  val run : 'a t -> string list * ('a, error) Base.Result.t
+  val run : 'a t -> string * ('a, error) Base.Result.t
 
   include Base.Monad.Infix with type 'a t := 'a t
 
@@ -107,28 +105,28 @@ module MONAD_WRITE_ERROR : sig
 end = struct
   open Base
 
-  type 'a t = string list -> string list * ('a, error) Result.t
+  type 'a t = string -> string * ('a, error) Result.t
 
-  let return x : 'a t = fun list -> list, Result.return x
-  let write str : unit t = fun list -> str :: list, Result.return ()
-  let fail err : 'a t = fun list -> list, Result.fail err
+  let return x : 'a t = fun str -> str, Result.return x
+  let write new_str : unit t = fun str -> str ^ new_str, Result.return ()
+  let fail err : 'a t = fun str -> str, Result.fail err
 
   let ( >>= ) (m : 'a t) (f : 'a -> 'b t) : 'b t =
-    fun list ->
-    match m list with
-    | list, Result.Error e -> list, Result.fail e
-    | list, Result.Ok x -> f x list
+    fun str ->
+    match m str with
+    | str, Result.Error e -> str, Result.fail e
+    | str, Result.Ok x -> f x str
   ;;
 
   let ( >>| ) (m : 'a t) (f : 'a -> 'b) : 'b t =
-    fun list ->
-    match m list with
-    | list, Result.Error e -> list, Result.fail e
-    | list, Result.Ok x -> list, Result.return (f x)
+    fun str ->
+    match m str with
+    | str, Result.Error e -> str, Result.fail e
+    | str, Result.Ok x -> str, Result.return (f x)
   ;;
 
   let bind x f = x >>= f
-  let run m = m []
+  let run m = m ""
 
   module Syntax = struct
     let ( let* ) x f = bind x f
@@ -383,8 +381,8 @@ let eval_expr =
       let* v = helper env e in
       eval_match env v list
     | Expr_seq (e1, e2) ->
-      let* v2 = helper env e2 in
       let* _ = helper env e1 in
+      let* v2 = helper env e2 in
       return v2
       (* below are the functions with hardcoded implementation *)
     | Expr_format_of_str ->
@@ -438,14 +436,14 @@ let eval_program prog =
 
 let run_eval_program prog =
   let out, env = run (eval_program prog) in
-  List.iter (fun s -> Format.printf "%s\n" s) out;
+  Format.printf "%s" out;
   env
 ;;
 
 (* it is mainly used for tests *)
 let run_eval_expr expr =
   let out, value = run (eval_expr EnvValues.std expr) in
-  List.iter (fun s -> Format.printf "%s\n" s) out;
+  Format.printf "%s" out;
   value
 ;;
 

@@ -44,9 +44,9 @@ let%expect_test _ =
     let str = "1234567"
     let c = get str 1
     let b = false;;
-    printf "string: %s; bool: %B\nnum: %d; char: %c" "abcdef" b 123 c
-    let fmt1 = format_of_string "char2 %c string %s"
-    let fmt2 = "char1 %c" ^^ fmt1
+    printf "string: %s; bool: %B\nnum: %d; char: %c\n" "abcdef" b 123 c
+    let fmt1 = format_of_string "char2: %c; string: %s\n"
+    let fmt2 = "char1: %c; " ^^ fmt1
     let fmt3 = format_of_string fmt2
     let my_printf = printf fmt3;;
     my_printf str.[(length str - 1)] c "str"
@@ -54,14 +54,14 @@ let%expect_test _ =
   in
   [%expect
     {|
-    char1 7char2 2 string str
     string: abcdef; bool: false
     num: 123; char: 2
+    char1: 7; char2: 2; string: str
     val b = false
     val c = '2'
-    val fmt1 = "char2 %c string %s" format
-    val fmt2 = "char1 %cchar2 %c string %s" format
-    val fmt3 = "char1 %cchar2 %c string %s" format
+    val fmt1 = "char2: %c; string: %s\n" format
+    val fmt2 = "char1: %c; char2: %c; string: %s\n" format
+    val fmt3 = "char1: %c; char2: %c; string: %s\n" format
     val my_printf = <fun>
     val str = "1234567" |}]
 ;;
