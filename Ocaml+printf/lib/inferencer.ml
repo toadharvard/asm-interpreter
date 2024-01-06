@@ -628,8 +628,7 @@ and infer_bin_op env op e1 e2 =
     | Concat_format, Expr_const (String s2) ->
       (match convert_to_format s2 with
        | Some fmt_s2 ->
-         return
-         @@ (Subst.empty, format_typ (infer_format_type fmt_s2), Expr_fstring fmt_s2)
+         return (Subst.empty, format_typ (infer_format_type fmt_s2), Expr_fstring fmt_s2)
        | None -> fail @@ `Invalid_format_str s2)
     | _ -> infer_expr env e2
   in

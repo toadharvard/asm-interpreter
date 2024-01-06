@@ -175,18 +175,9 @@ let%expect_test _ =
   [%expect {| Matching failure |}]
 ;;
 
+(* I have two functions: "eval_program_and_print" and "eval_expr_and_print"
+   In this test you wrote a declaration, so I replaced function *)
 let%expect_test _ =
-  let _ = eval_expr_and_print {|let f x = format_of_string x|} in
-  [%expect.unreachable]
-[@@expect.uncaught_exn {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-
-  (Invalid_argument "result is Error _")
-  Raised at Stdlib.invalid_arg in file "stdlib.ml" (inlined), line 30, characters 20-45
-  Called from Stdlib__Result.get_ok in file "result.ml", line 21, characters 45-76
-  Called from Tests__Interpret_tests.eval_expr_and_print in file "lib/tests/interpret_tests.ml", line 9, characters 12-54
-  Called from Tests__Interpret_tests.(fun) in file "lib/tests/interpret_tests.ml", line 179, characters 10-62
-  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
+  let _ = eval_program_and_print {|let f x = format_of_string x|} in
+  [%expect {| val f = <fun> |}]
 ;;

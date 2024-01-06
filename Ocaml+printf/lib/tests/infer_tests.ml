@@ -274,33 +274,33 @@ let%expect_test "Formatted Logging" =
       {| 
       let log ppf  = 
         if true then printf ppf
-        else  printf ppf
+        else printf ppf
       in 
       log "%s" "asdf"
         |}
   in
-  [%expect {|
-    Occurs check failed |}]
+  [%expect {| Occurs check failed |}]
 ;;
 
 let%expect_test "Weird but OK" =
-  let _ =
-    infer_expr_and_print_typ
-      {|     
-      (fun  x  -> format_of_string x) "asd%df" 
-        |}
-  in
+  let _ = infer_expr_and_print_typ {| (fun x -> format_of_string x) "asd%df" |} in
   [%expect {|
     int -> unit format_string |}]
 ;;
 
+(* expression  (fun x -> format_of_string x) "asd%df" is not a function
+   In OCaml it is also an error *)
 let%expect_test "Why error?" =
-  let _ =
-    infer_expr_and_print_typ
-      {|     
-      (fun  x  -> format_of_string x) "asd%df"  11
-        |}
-  in
+  let _ = infer_expr_and_print_typ {| (fun  x  -> format_of_string x) "asd%df"  11 |} in
   [%expect {|
     Unification failed on int -> unit format_string and int -> '_2 |}]
+;;
+
+(* Perhaps you meant *)
+let%expect_test "printf" =
+  let _ =
+    infer_expr_and_print_typ {| printf ((fun x -> format_of_string x) "asd%df") 11 |}
+  in
+  [%expect {|
+    unit |}]
 ;;
