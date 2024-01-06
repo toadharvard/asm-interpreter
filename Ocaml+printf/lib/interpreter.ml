@@ -26,7 +26,7 @@ type value =
   (** string option is None when function is non-recursive
       and Some _ when function is recursive *)
   | VFun of string option * Ast.pattern * Ast.expr * env_values
-  | VTuple of value list
+  | VTuple of value * value list
   | VList of value list
 
 and env_values = (string, value, Base.String.comparator_witness) Base.Map.t
@@ -35,10 +35,10 @@ let rec pp_value ppf = function
   | VUnit -> Format.fprintf ppf "()"
   | VInt i -> Format.fprintf ppf "%d" i
   | VBool b -> Format.fprintf ppf "%B" b
-  | VChar c -> Format.fprintf ppf {|'%c'|} c
+  | VChar c -> Format.fprintf ppf {|%C|} c
   | VString s -> Format.fprintf ppf {|%S|} s
   | VFun _ -> Format.fprintf ppf "<fun>"
-  | VTuple list ->
+  | VTuple (h, list) ->
     Format.fprintf ppf "(";
     let rec helper = function
       | [] -> Format.fprintf ppf ")"
@@ -51,7 +51,7 @@ let rec pp_value ppf = function
         Format.fprintf ppf fmt pp_value h;
         helper tl
     in
-    helper list
+    helper (h :: list)
   | VList list ->
     Format.fprintf ppf "[";
     let rec helper = function
@@ -186,13 +186,13 @@ let rec match_pattern env = function
   | Ast.Pat_const (Char c1), VChar c2 when c1 = c2 -> Some env
   | Ast.Pat_const (String s1), VString s2 when s1 = s2 -> Some env
   | Ast.Pat_val (LCIdent name), v -> Some (EnvValues.update env name v)
-  | Ast.Pat_tuple pat_list, VTuple val_tuple ->
+  | Ast.Pat_tuple (pat1, pat_list), VTuple (v1, val_tuple) ->
     let f1 env p v =
       match env with
       | Some env -> match_pattern env (p, v)
       | None -> None
     in
-    List.fold_left2 f1 (Some env) pat_list val_tuple
+    List.fold_left2 f1 (match_pattern env (pat1, v1)) pat_list val_tuple
   | Ast.Pat_cons_list (p1, p2), VList (h :: tl) ->
     (match match_pattern env (p1, h) with
      | Some env -> match_pattern env (p2, VList tl)
@@ -360,7 +360,8 @@ let eval_expr =
          in
          helper new_env e
        | _ -> fail `Type_mismatch)
-    | Expr_tuple list ->
+    | Expr_tuple (h, list) ->
+      let* value1 = helper env h in
       let* value_list =
         List.fold_right
           (fun expr acc ->
@@ -370,7 +371,7 @@ let eval_expr =
           list
           (return [])
       in
-      return @@ VTuple value_list
+      return @@ VTuple (value1, value_list)
     | Expr_cons_list (h, tl) ->
       let* h = helper env h in
       let* tl = helper env tl in

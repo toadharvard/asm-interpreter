@@ -26,11 +26,11 @@ let assign_names typ =
       let names, (letter, num) = helper names letter num l in
       helper names letter num r
     | TList t -> helper names letter num t
-    | TTuple list ->
+    | TTuple (h, list) ->
       List.fold_left
         (fun (names, (letter, num)) -> helper names letter num)
         (names, (letter, num))
-        list
+        (h :: list)
     | _ -> names, (letter, num)
   in
   let names, (_, _) = helper (Base.Map.empty (module Base.Int)) 'a' 0 typ in
@@ -49,15 +49,12 @@ let pp_typ ppf typ =
        | TArr (_, _), _ -> Format.fprintf ppf "(%a) -> %a" helper l helper r
        | _ -> Format.fprintf ppf "%a -> %a" helper l helper r)
     | TUnit -> Format.fprintf ppf "unit"
-    | TTuple l ->
-      (match l with
-       | h :: tl ->
-         List.fold_left
-           (fun _ item -> Format.fprintf ppf " * %a" helper item)
-           (Format.fprintf ppf "(%a" helper h)
-           tl;
-         Format.fprintf ppf ")"
-       | _ -> Format.fprintf ppf "Impossible state")
+    | TTuple (h, list) ->
+      List.fold_left
+        (fun _ item -> Format.fprintf ppf " * %a" helper item)
+        (Format.fprintf ppf "(%a" helper h)
+        list;
+      Format.fprintf ppf ")"
     | TList t -> Format.fprintf ppf "%a list" helper t
     | TFString t -> Format.fprintf ppf "%a format_string" helper t
   in

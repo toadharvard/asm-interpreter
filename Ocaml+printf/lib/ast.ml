@@ -49,7 +49,7 @@ type pattern =
   | Pat_any (** _ *)
   | Pat_val of val_name (** abc *)
   | Pat_const of const (** 1 *)
-  | Pat_tuple of pattern list (** (1, 2) *)
+  | Pat_tuple of pattern * pattern list (** (1, 2) *)
   | Pat_cons_list of pattern * pattern (** 1::[] or [1;2] *)
   | Pat_empty_list (** [] *)
 [@@deriving show { with_path = false }]
@@ -66,7 +66,7 @@ type expr =
   | Expr_match of expr * (pattern * expr) list (** match x with | 1 -> 0 | _ -> 1 *)
   | Expr_empty_list (** [] *)
   | Expr_cons_list of expr * expr (** 1::[] or [1;2] *)
-  | Expr_tuple of expr list (** (1, a, 'c') *)
+  | Expr_tuple of expr * expr list (** (1, a, 'c') *)
   | Expr_seq of expr * expr (** e1; e2 *)
   | Expr_fstring of fstring (*** "abc%d %c" *)
   (* hard-coded functions *)

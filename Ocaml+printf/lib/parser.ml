@@ -264,8 +264,7 @@ let parse_tuple expr =
   expr
   >>= (fun first_expr ->
         many1 (take_whitespaces *> char ',' *> expr)
-        >>| fun expr_list -> first_expr :: expr_list)
-  >>| (fun expr_list -> Expr_tuple expr_list)
+        >>| fun expr_list -> Expr_tuple (first_expr, expr_list))
   <|> expr
 ;;
 
@@ -323,11 +322,9 @@ let parse_pat =
     let parse_tuple_pat =
       parenthesis cur_pat
       <|> parse_base_pat
-      >>= (fun first_pat ->
-            many1
-              (take_whitespaces *> char ',' *> (parenthesis cur_pat <|> parse_base_pat))
-            >>| fun pat_list -> first_pat :: pat_list)
-      >>| fun pat_list -> Pat_tuple pat_list
+      >>= fun first_pat ->
+      many1 (take_whitespaces *> char ',' *> (parenthesis cur_pat <|> parse_base_pat))
+      >>| fun pat_list -> Pat_tuple (first_pat, pat_list)
     in
     choice [ parse_tuple_pat; parse_cons_pat; parse_base_pat; parenthesis cur_pat ])
 ;;

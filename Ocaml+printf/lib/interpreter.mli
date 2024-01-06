@@ -10,7 +10,7 @@ type value =
   | VString of string
   | VFormat_string of Ast.fstring
   | VFun of string option * Ast.pattern * Ast.expr * env_values
-  | VTuple of value list
+  | VTuple of value * value list
   | VList of value list
 
 and env_values = (string, value, Base.String.comparator_witness) Base.Map.t

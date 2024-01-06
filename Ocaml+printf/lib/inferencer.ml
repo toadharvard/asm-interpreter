@@ -19,15 +19,12 @@ let rec pp_typ ppf = function
      | TArr (_, _) -> Format.fprintf ppf "(%a) -> %a" pp_typ l pp_typ r
      | _ -> Format.fprintf ppf "%a -> %a" pp_typ l pp_typ r)
   | TUnit -> Format.fprintf ppf "unit"
-  | TTuple l ->
-    (match l with
-     | h :: tl ->
-       List.fold_left
-         (fun _ item -> Format.fprintf ppf " * %a" pp_typ item)
-         (Format.fprintf ppf "(%a" pp_typ h)
-         tl;
-       Format.fprintf ppf ")"
-     | _ -> Format.fprintf ppf "Impossible state")
+  | TTuple (h, list) ->
+    List.fold_left
+      (fun _ item -> Format.fprintf ppf " * %a" pp_typ item)
+      (Format.fprintf ppf "(%a" pp_typ h)
+      list;
+    Format.fprintf ppf ")"
   | TList t -> Format.fprintf ppf "%a list" pp_typ t
   | TFString t -> Format.fprintf ppf "%a format_string" pp_typ t
 ;;
@@ -159,7 +156,8 @@ module Type = struct
   let rec occurs_in v = function
     | TVar b -> b = v
     | TArr (l, r) -> occurs_in v l || occurs_in v r
-    | TTuple l -> List.fold_left (fun occurs item -> occurs || occurs_in v item) false l
+    | TTuple (h, list) ->
+      List.fold_left (fun occurs item -> occurs || occurs_in v item) (occurs_in v h) list
     | TList t -> occurs_in v t
     | TFString t -> occurs_in v t
     | _ -> false
@@ -169,7 +167,8 @@ module Type = struct
     let rec helper acc = function
       | TVar b -> TypeVarSet.add b acc
       | TArr (l, r) -> helper (helper acc l) r
-      | TTuple l -> List.fold_left (fun acc item -> helper acc item) acc l
+      | TTuple (h, list) ->
+        List.fold_left (fun acc item -> helper acc item) (helper acc h) list
       | TList t -> helper acc t
       | TFString t -> helper acc t
       | _ -> acc
@@ -217,7 +216,7 @@ end = struct
          | None -> ty
          | Some x -> x)
       | TArr (l, r) -> TArr (helper l, helper r)
-      | TTuple l -> TTuple (List.map l ~f:(fun item -> helper item))
+      | TTuple (h, list) -> TTuple (helper h, List.map list ~f:(fun item -> helper item))
       | TList t -> TList (helper t)
       | TFString t -> TFString (helper t)
       | other -> other
@@ -235,13 +234,14 @@ end = struct
       let* sub2 = unify (apply sub1 r1) (apply sub1 r2) in
       compose sub1 sub2
     | TUnit, TUnit -> return empty
-    | TTuple l1, TTuple l2 ->
+    | TTuple (h1, list1), TTuple (h2, list2) ->
       let* unified =
-        match List.map2 l1 l2 ~f:(fun t1 t2 -> unify t1 t2) with
-        | Unequal_lengths -> fail (`Unification_failed (TTuple l1, TTuple l2))
+        match List.map2 list1 list2 ~f:(fun t1 t2 -> unify t1 t2) with
+        | Unequal_lengths ->
+          fail (`Unification_failed (TTuple (h1, list1), TTuple (h2, list2)))
         | Ok res -> return res
       in
-      List.fold_left unified ~init:(return empty) ~f:(fun acc s ->
+      List.fold_left unified ~init:(unify h1 h2) ~f:(fun acc s ->
         let* s = s in
         let* acc = acc in
         compose acc s)
@@ -475,14 +475,15 @@ let rec infer_pattern env = function
     let* sub3 = Subst.unify (TList typ1) typ2 in
     let* final_sub = Subst.compose_all [ sub1; sub2; sub3; sub_uni ] in
     return (final_sub, Subst.apply sub3 typ2, env2)
-  | Ast.Pat_tuple l ->
-    let f1 pat (sub1, l, env) =
-      let* sub2, arg, env = infer_pattern env pat in
-      let* sub = Subst.compose sub1 sub2 in
+  | Ast.Pat_tuple (h, list) ->
+    let* sub1, typ1, env1 = infer_pattern env h in
+    let f1 pat (sub_prev, l, env) =
+      let* sub_cur, arg, env = infer_pattern env pat in
+      let* sub = Subst.compose sub_prev sub_cur in
       return (sub, arg :: l, env)
     in
-    let* sub, arg, env = RList.fold_right l ~init:(return (Subst.empty, [], env)) ~f:f1 in
-    return (sub, TTuple arg, env)
+    let* sub, arg, env = RList.fold_right list ~init:(return (sub1, [], env1)) ~f:f1 in
+    return (sub, TTuple (typ1, arg), env)
 ;;
 
 (*in addition to type inference, modifying AST by converting
@@ -546,14 +547,15 @@ let rec infer_expr env expr =
     let* sub_branches = Subst.unify typ2 typ3 in
     let* final_sub = Subst.compose_all [ sub1; sub2; sub3; sub_cond; sub_branches ] in
     return (final_sub, Subst.apply sub_branches typ2, Expr_ite (expr1, expr2, expr3))
-  | Expr_tuple list ->
+  | Expr_tuple (expr1, list) ->
+    let* sub1, typ1, expr1 = infer_expr env expr1 in
     let list = List.map (fun item -> infer_expr env item) list in
     let* final_sub =
       let unpack item = item >>| fun (item, _, _) -> item in
       let f acc item =
         unpack item >>= fun item -> acc >>= fun acc -> Subst.compose acc item
       in
-      List.fold_left f (return Subst.empty) list
+      List.fold_left f (return sub1) list
     in
     let* typ_list =
       let unpack item = item >>| fun (_, item, _) -> item in
@@ -562,12 +564,15 @@ let rec infer_expr env expr =
       in
       List.fold_right f list (return [])
     in
-    let* expr =
+    let* expr_list =
       let unpack item = item >>| fun (_, _, item) -> item in
       let f item acc = unpack item >>= fun item -> acc >>| fun acc -> item :: acc in
       List.fold_right f list (return [])
     in
-    return (final_sub, TTuple typ_list, Expr_tuple expr)
+    return
+      ( final_sub
+      , TTuple (Subst.apply final_sub typ1, typ_list)
+      , Expr_tuple (expr1, expr_list) )
   | Expr_cons_list (e1, e2) ->
     let* sub1, typ1, expr1 = infer_expr env e1 in
     let* sub2, typ2, expr2 = infer_expr (TypeEnv.apply sub1 env) e2 in

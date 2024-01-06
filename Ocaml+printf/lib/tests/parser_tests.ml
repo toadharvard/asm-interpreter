@@ -131,13 +131,13 @@ let%expect_test _ =
     {|
     [(Let_decl
         (false, (LCIdent "tuple1"),
-         (Expr_tuple
-            [(Expr_const (Int 1)); (Expr_val (LCIdent "x"));
+         (Expr_tuple ((Expr_const (Int 1)),
+            [(Expr_val (LCIdent "x"));
               (Bin_op (Add, (Expr_const (Int 1)), (Expr_const (Int 2))));
-              (Expr_tuple
-                 [(Expr_const (Int 1)); (Expr_const (Int 2));
-                   (Expr_const (Int 3))])
-              ])))
+              (Expr_tuple ((Expr_const (Int 1)),
+                 [(Expr_const (Int 2)); (Expr_const (Int 3))]))
+              ]
+            ))))
       ] |}]
 ;;
 
@@ -202,16 +202,16 @@ let%expect_test _ =
          (Expr_let (
             (false, (LCIdent "f"),
              (Expr_fun (
-                (Pat_tuple
-                   [(Pat_cons_list ((Pat_val (LCIdent "t")),
-                       (Pat_cons_list ((Pat_const (Int 1)),
-                          (Pat_cons_list (
-                             (Pat_tuple
-                                [(Pat_const (Int 1)); (Pat_const (Int 2))]),
-                             (Pat_val (LCIdent "y"))))
-                          ))
-                       ));
-                     (Pat_const (Int 3))]),
+                (Pat_tuple (
+                   (Pat_cons_list ((Pat_val (LCIdent "t")),
+                      (Pat_cons_list ((Pat_const (Int 1)),
+                         (Pat_cons_list (
+                            (Pat_tuple ((Pat_const (Int 1)),
+                               [(Pat_const (Int 2))])),
+                            (Pat_val (LCIdent "y"))))
+                         ))
+                      )),
+                   [(Pat_const (Int 3))])),
                 (Expr_val (LCIdent "a"))))),
             (Expr_val (LCIdent "f"))))))
       ] |}]
@@ -298,4 +298,20 @@ let%expect_test _ =
   let _ = parse_and_print {|let str = "\x"|} in
   [%expect {|
     Parsing error: no more choices |}]
+;;
+
+let%expect_test _ =
+  let _ = parse_and_print {|let f (a, b) = a + b;; let a = f (1, 2)|} in
+  [%expect
+    {|
+    [(Let_decl
+        (false, (LCIdent "f"),
+         (Expr_fun (
+            (Pat_tuple ((Pat_val (LCIdent "a")), [(Pat_val (LCIdent "b"))])),
+            (Bin_op (Add, (Expr_val (LCIdent "a")), (Expr_val (LCIdent "b"))))))));
+      (Let_decl
+         (false, (LCIdent "a"),
+          (Expr_app ((Expr_val (LCIdent "f")),
+             (Expr_tuple ((Expr_const (Int 1)), [(Expr_const (Int 2))]))))))
+      ] |}]
 ;;

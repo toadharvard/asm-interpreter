@@ -7,7 +7,7 @@ type typ =
   | TPrim of string
   | TArr of typ * typ
   | TUnit
-  | TTuple of typ list
+  | TTuple of typ * typ list
   | TList of typ
   | TFString of typ
 

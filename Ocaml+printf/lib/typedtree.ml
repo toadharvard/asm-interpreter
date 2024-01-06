@@ -7,7 +7,7 @@ type typ =
   | TPrim of string (** ground type *)
   | TArr of typ * typ (** function type *)
   | TUnit (** unit *)
-  | TTuple of typ list (** tuple type *)
+  | TTuple of typ * typ list (** tuple type *)
   | TList of typ (** list type *)
   | TFString of typ (** example: "%d%s" has type TFString (int -> char -> unit) *)
 

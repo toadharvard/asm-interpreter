@@ -50,12 +50,12 @@ let%expect_test _ =
 
 let%expect_test _ =
   let _ = infer_expr_and_print_typ {|fun (a,b,c,d) -> a + d|} in
-  [%expect {| (int * '_4 * '_3 * int) -> int |}]
+  [%expect {| (int * '_5 * '_4 * int) -> int |}]
 ;;
 
 let%expect_test _ =
   let _ = infer_expr_and_print_typ {|fun (a,b,(2::t),d) -> a + d|} in
-  [%expect {| (int * '_5 * int list * int) -> int |}]
+  [%expect {| (int * '_6 * int list * int) -> int |}]
 ;;
 
 let%expect_test _ =
