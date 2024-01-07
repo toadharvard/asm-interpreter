@@ -20,7 +20,7 @@ let infer_program_and_print_env str =
 
 let%expect_test _ =
   let _ = infer_expr_and_print_typ {|let f x g = g x in f|} in
-  [%expect {| '_5 -> ('_5 -> '_6) -> '_6 |}]
+  [%expect {| 'a -> ('a -> 'b) -> 'b |}]
 ;;
 
 let%expect_test _ =
@@ -28,19 +28,19 @@ let%expect_test _ =
     infer_expr_and_print_typ
       {|let f x g = g x in let id x = x in let fst x y = x in fst (f id)|}
   in
-  [%expect {| '_10 -> (('_14 -> '_14) -> '_13) -> '_13 |}]
+  [%expect {| 'a -> (('b -> 'b) -> 'c) -> 'c |}]
 ;;
 
 let%expect_test _ =
   let _ = infer_expr_and_print_typ {| fun f -> fun x -> f x |} in
-  [%expect {| ('_3 -> '_4) -> '_3 -> '_4 |}]
+  [%expect {| ('a -> 'b) -> 'a -> 'b |}]
 ;;
 
 let%expect_test _ =
   let _ =
     infer_expr_and_print_typ {|let id x = x in if (id 2 < 3) then id else (fun t -> t)|}
   in
-  [%expect {| '_7 -> '_7 |}]
+  [%expect {| 'a -> 'a |}]
 ;;
 
 let%expect_test _ =
@@ -50,27 +50,27 @@ let%expect_test _ =
 
 let%expect_test _ =
   let _ = infer_expr_and_print_typ {|fun (a,b,c,d) -> a + d|} in
-  [%expect {| (int * '_5 * '_4 * int) -> int |}]
+  [%expect {| int * 'a * 'b * int -> int |}]
 ;;
 
 let%expect_test _ =
   let _ = infer_expr_and_print_typ {|fun (a,b,(2::t),d) -> a + d|} in
-  [%expect {| (int * '_6 * int list * int) -> int |}]
+  [%expect {| int * 'a * int list * int -> int |}]
 ;;
 
 let%expect_test _ =
   let _ = infer_expr_and_print_typ {|let f ((1,2)::y) = 0 in f |} in
-  [%expect {| (int * int) list -> int |}]
+  [%expect {| int * int list -> int |}]
 ;;
 
 let%expect_test _ =
   let _ = infer_expr_and_print_typ {|let f (1,_,y) = y in f |} in
-  [%expect {| (int * '_5 * '_4) -> '_4 |}]
+  [%expect {| int * 'a * 'b -> 'b |}]
 ;;
 
 let%expect_test _ =
   let _ = infer_expr_and_print_typ {|let a = [] in a |} in
-  [%expect {| '_3 list |}]
+  [%expect {| 'a list |}]
 ;;
 
 let%expect_test _ =
@@ -90,7 +90,7 @@ let%expect_test _ =
     infer_expr_and_print_typ
       {|let rec f (a, b) = if a + b < 10 then a + b else f (a-1,b-1) in f|}
   in
-  [%expect {| (int * int) -> int |}]
+  [%expect {| int * int -> int |}]
 ;;
 
 let%expect_test _ =
@@ -168,11 +168,11 @@ let%expect_test _ =
   in
   [%expect
     {|
-    val a : forall [ ] . int
-    val fac : forall [ ] . int -> int
-    val rev : forall [ 23; ] . '_23 list -> '_23 list
-    val reversed1 : forall [ ] . int list
-    val reversed2 : forall [ ] . bool list |}]
+    val a : int
+    val fac : int -> int
+    val rev : forall 'a. 'a list -> 'a list
+    val reversed1 : int list
+    val reversed2 : bool list |}]
 ;;
 
 let%expect_test _ =
@@ -183,7 +183,7 @@ let%expect_test _ =
   in
   [%expect
     {|
-    val fmt : forall [ ] . int -> bool -> char -> string -> unit format_string |}]
+    val fmt : int -> bool -> char -> string -> unit format_string |}]
 ;;
 
 (* Errors *)
@@ -210,7 +210,7 @@ let%expect_test _ =
 
 let%expect_test _ =
   let _ = infer_expr_and_print_typ {|let f (a,b) = a + b in f (1,2,3)|} in
-  [%expect {| Unification failed on (int * int) and (int * int * int) |}]
+  [%expect {| Unification failed on int * int and int * int * int |}]
 ;;
 
 let%expect_test _ =
@@ -232,7 +232,7 @@ let%expect_test _ =
 
 let%expect_test _ =
   let _ = infer_expr_and_print_typ {|let f (a::1) = 0 in f |} in
-  [%expect {| Unification failed on int and '_3 list |}]
+  [%expect {| Unification failed on int and 'a list |}]
 ;;
 
 let%expect_test _ =
@@ -265,7 +265,7 @@ let%expect_test _ =
   let rec fix f x = f (fix f) x in 
   fix 
   |} in
-  [%expect {| (('_8 -> '_9) -> '_8 -> '_9) -> '_8 -> '_9 |}]
+  [%expect {| (('a -> 'b) -> 'a -> 'b) -> 'a -> 'b |}]
 ;;
 
 let%expect_test "Formatted Logging" =
@@ -293,7 +293,7 @@ let%expect_test "Weird but OK" =
 let%expect_test "Why error?" =
   let _ = infer_expr_and_print_typ {| (fun  x  -> format_of_string x) "asd%df"  11 |} in
   [%expect {|
-    Unification failed on int -> unit format_string and int -> '_2 |}]
+    Unification failed on int -> unit format_string and int -> 'a |}]
 ;;
 
 (* Perhaps you meant *)
@@ -313,5 +313,5 @@ let%expect_test _ =
       (fun b -> b) inc (a b)  
     in f|}
   in
-  [%expect {| ('_10 -> int) -> '_10 -> int |}]
+  [%expect {| ('a -> int) -> 'a -> int |}]
 ;;

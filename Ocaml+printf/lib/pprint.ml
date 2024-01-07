@@ -40,7 +40,10 @@ let pp_typ ppf typ =
   let open Typedtree in
   let names = assign_names typ in
   let rec helper ppf = function
-    | TVar n -> Format.fprintf ppf "%s" (Base.Map.find_exn names n)
+    | TVar n ->
+      (try Format.fprintf ppf "%s" (Base.Map.find_exn names n) with
+       | Base.Not_found_s _ | Stdlib.Not_found ->
+         Format.fprintf ppf "Names for types are counted incorrectly")
     | TPrim s -> Format.fprintf ppf "%s" s
     | TArr (l, r) ->
       (match l, r with
@@ -48,11 +51,12 @@ let pp_typ ppf typ =
        | _ -> Format.fprintf ppf "%a -> %a" helper l helper r)
     | TUnit -> Format.fprintf ppf "unit"
     | TTuple (h, list) ->
-      List.fold_left
-        (fun _ item -> Format.fprintf ppf " * %a" helper item)
-        (Format.fprintf ppf "(%a" helper h)
-        list;
-      Format.fprintf ppf ")"
+      let print_item item fmt =
+        match item with
+        | TArr (_, _) -> Format.fprintf ppf (fmt ^^ "(%a)") helper item
+        | _ -> Format.fprintf ppf (fmt ^^ "%a") helper item
+      in
+      List.fold_left (fun _ item -> print_item item " * ") (print_item h "") list;
     | TList t -> Format.fprintf ppf "%a list" helper t
     | TFString t -> Format.fprintf ppf "%a format_string" helper t
   in
@@ -63,12 +67,16 @@ let pp_typ ppf typ =
 let pp_scheme_binder ppf (Typedtree.Scheme (binder_set, typ)) =
   let open Typedtree in
   let names = assign_names typ in
-  if not (TypeVarSet.is_empty binder_set) then Format.fprintf ppf "forall";
-  TypeVarSet.iter
-    (fun n -> Format.fprintf ppf " %s" (Base.Map.find_exn names n))
-    binder_set;
-  if not (TypeVarSet.is_empty binder_set) then Format.fprintf ppf ". ";
-  Format.fprintf ppf "%a" pp_typ typ
+  try
+    if not (TypeVarSet.is_empty binder_set) then Format.fprintf ppf "forall";
+    TypeVarSet.iter
+      (fun n -> Format.fprintf ppf " %s" (Base.Map.find_exn names n))
+      binder_set;
+    if not (TypeVarSet.is_empty binder_set) then Format.fprintf ppf ". ";
+    Format.fprintf ppf "%a" pp_typ typ
+  with
+  | Base.Not_found_s _ | Stdlib.Not_found ->
+    Format.fprintf ppf "Binder set does not match the type"
 ;;
 
 (* print scheme without binded vars *)
