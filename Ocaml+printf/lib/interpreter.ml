@@ -363,15 +363,15 @@ let eval_expr =
     | Expr_tuple (h, list) ->
       let* value1 = helper env h in
       let* value_list =
-        List.fold_right
-          (fun expr acc ->
+        List.fold_left
+          (fun acc expr ->
             let* acc = acc in
             let* value = helper env expr in
             return (value :: acc))
-          list
           (return [])
+          list
       in
-      return @@ VTuple (value1, value_list)
+      return @@ VTuple (value1, List.rev value_list)
     | Expr_cons_list (h, tl) ->
       let* h = helper env h in
       let* tl = helper env tl in

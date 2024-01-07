@@ -170,7 +170,7 @@ let%expect_test _ =
     {|
     val a : forall [ ] . int
     val fac : forall [ ] . int -> int
-    val rev : forall [ 22; ] . '_22 list -> '_22 list
+    val rev : forall [ 23; ] . '_23 list -> '_23 list
     val reversed1 : forall [ ] . int list
     val reversed2 : forall [ ] . bool list |}]
 ;;
@@ -303,4 +303,14 @@ let%expect_test "printf" =
   in
   [%expect {|
     unit |}]
+;;
+
+let%expect_test _ =
+  let _ =
+    infer_expr_and_print_typ {|let f a b = 
+      let inc = (fun a -> a + 1) in 
+      (fun b -> b) inc (a b)  
+    in f|}
+  in
+  [%expect {| ('_10 -> int) -> '_10 -> int |}]
 ;;

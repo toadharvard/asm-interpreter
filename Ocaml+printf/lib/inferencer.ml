@@ -512,7 +512,7 @@ let rec infer_expr env expr =
   | Bin_op (op, e1, e2) -> infer_bin_op env op e1 e2
   | Expr_fun (pattern, e) ->
     let* sub1, typ1, new_env = infer_pattern TypeEnv.empty pattern in
-    let env = TypeEnv.union new_env env in
+    let env = TypeEnv.union env new_env in
     let* sub2, typ2, expr = infer_expr (TypeEnv.apply sub1 env) e in
     let arg_type = Subst.apply sub2 typ1 in
     let* final_sub = Subst.compose sub1 sub2 in
@@ -549,26 +549,21 @@ let rec infer_expr env expr =
     return (final_sub, Subst.apply sub_branches typ2, Expr_ite (expr1, expr2, expr3))
   | Expr_tuple (expr1, list) ->
     let* sub1, typ1, expr1 = infer_expr env expr1 in
-    let list = List.map (fun item -> infer_expr env item) list in
-    let* final_sub =
-      let unpack item = item >>| fun (item, _, _) -> item in
-      let f acc item =
-        unpack item >>= fun item -> acc >>= fun acc -> Subst.compose acc item
-      in
-      List.fold_left f (return sub1) list
+    let env = TypeEnv.apply sub1 env in
+    let f1 prev cur_expr =
+      let* prev_env, prev_subst, prev_typ, prev_expr = prev in
+      let* cur_subst, cur_typ, cur_expr = infer_expr prev_env cur_expr in
+      let* next_subst = Subst.compose prev_subst cur_subst in
+      let next_env = TypeEnv.apply next_subst prev_env in
+      return (next_env, next_subst, cur_typ :: prev_typ, cur_expr :: prev_expr)
     in
-    let* typ_list =
-      let unpack item = item >>| fun (_, item, _) -> item in
-      let f item acc =
-        unpack item >>= fun item -> acc >>| fun acc -> Subst.apply final_sub item :: acc
-      in
-      List.fold_right f list (return [])
+    let* _, final_sub, typ_list, expr_list =
+      List.fold_left f1 (return (env, sub1, [], [])) list
     in
-    let* expr_list =
-      let unpack item = item >>| fun (_, _, item) -> item in
-      let f item acc = unpack item >>= fun item -> acc >>| fun acc -> item :: acc in
-      List.fold_right f list (return [])
+    let typ_list =
+      List.map (fun item -> Subst.apply final_sub item) (List.rev typ_list)
     in
+    let expr_list = List.rev expr_list in
     return
       ( final_sub
       , TTuple (Subst.apply final_sub typ1, typ_list)
