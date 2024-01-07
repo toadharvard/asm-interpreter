@@ -53,10 +53,10 @@ let pp_typ ppf typ =
     | TTuple (h, list) ->
       let print_item item fmt =
         match item with
-        | TArr (_, _) -> Format.fprintf ppf (fmt ^^ "(%a)") helper item
+        | TArr (_, _) | TTuple _ -> Format.fprintf ppf (fmt ^^ "(%a)") helper item
         | _ -> Format.fprintf ppf (fmt ^^ "%a") helper item
       in
-      List.fold_left (fun _ item -> print_item item " * ") (print_item h "") list;
+      List.fold_left (fun _ item -> print_item item " * ") (print_item h "") list
     | TList t -> Format.fprintf ppf "%a list" helper t
     | TFString t -> Format.fprintf ppf "%a format_string" helper t
   in

@@ -181,8 +181,7 @@ let%expect_test _ =
       {|let fmt = "%d%B" ^^ "%c%s";;
         printf fmt 1 true 'a' "abc"|}
   in
-  [%expect
-    {|
+  [%expect {|
     val fmt : int -> bool -> char -> string -> unit format_string |}]
 ;;
 

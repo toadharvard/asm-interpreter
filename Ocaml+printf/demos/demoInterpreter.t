@@ -91,3 +91,13 @@ SEVERAL_PRINTF
   a1
   b2
   c3
+FACTORIAL WITH FIX
+  $ dune exec demoInterpreter << EOF
+  > let rec fix f x = f (fix f) x
+  > let fac = fix (fun self n -> if n <= 1 then 1 else n * self (n - 1))
+  > let x = fac 1
+  > let y = fac 6
+  val fac : int -> int = <fun>
+  val fix : (('a -> 'b) -> 'a -> 'b) -> 'a -> 'b = <fun>
+  val x : int = 1
+  val y : int = 720
