@@ -7,7 +7,7 @@ open Ocaml_printf_lib
 let infer_expr_and_print_typ str =
   let parsed = Result.get_ok (Parser.run_parser_expr str) in
   match Inferencer.run_infer_expr parsed with
-  | Ok (ty, _) -> Format.printf "%a" Inferencer.pp_typ ty
+  | Ok (ty, _) -> Format.printf "%a" Pprint.pp_typ ty
   | Error err -> Format.printf "%a" Inferencer.pp_error err
 ;;
 
@@ -307,7 +307,8 @@ let%expect_test "printf" =
 
 let%expect_test _ =
   let _ =
-    infer_expr_and_print_typ {|let f a b = 
+    infer_expr_and_print_typ
+      {|let f a b = 
       let inc = (fun a -> a + 1) in 
       (fun b -> b) inc (a b)  
     in f|}

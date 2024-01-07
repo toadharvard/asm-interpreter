@@ -11,15 +11,7 @@ type typ =
   | TList of typ (** list type *)
   | TFString of typ (** example: "%d%s" has type TFString (int -> char -> unit) *)
 
-module TypeVarSet = struct
-  include Stdlib.Set.Make (Int)
-
-  let pp ppf s =
-    Format.printf "[ ";
-    iter (Format.fprintf ppf "%d; ") s;
-    Format.printf "]"
-  ;;
-end
+module TypeVarSet = Stdlib.Set.Make (Int)
 
 type scheme = Scheme of TypeVarSet.t * typ
 

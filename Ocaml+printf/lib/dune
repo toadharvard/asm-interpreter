@@ -3,7 +3,7 @@
 (library
  (name ocaml_printf_lib)
  (public_name Ocaml+printf.Lib)
- (modules Ast Parser Typedtree Inferencer Interpreter)
+ (modules Ast Parser Typedtree Inferencer Interpreter Pprint)
  (libraries base stdlib angstrom)
  (inline_tests)
  (preprocess

@@ -2,8 +2,6 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-val pp_typ : Format.formatter -> Typedtree.typ -> unit
-
 type error =
   [ `Impossible_state of string
   | `Invalid_format_str of string

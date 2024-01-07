@@ -23,7 +23,8 @@ module TypeVarSet : sig
   val inter : t -> t -> t
   val diff : t -> t -> t
   val fold : (elt -> 'a -> 'a) -> t -> 'a -> 'a
-  val pp : Format.formatter -> t -> unit
+  val iter : (elt -> unit) -> t -> unit
+  val is_empty : t -> bool
 end
 
 type scheme = Scheme of TypeVarSet.t * typ

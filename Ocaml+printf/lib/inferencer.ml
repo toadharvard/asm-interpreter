@@ -10,25 +10,6 @@
 
 open Typedtree
 
-(* this pp used for tests *)
-let rec pp_typ ppf = function
-  | TVar n -> Format.fprintf ppf "'_%d" n
-  | TPrim s -> Format.fprintf ppf "%s" s
-  | TArr (l, r) ->
-    (match l with
-     | TArr (_, _) -> Format.fprintf ppf "(%a) -> %a" pp_typ l pp_typ r
-     | _ -> Format.fprintf ppf "%a -> %a" pp_typ l pp_typ r)
-  | TUnit -> Format.fprintf ppf "unit"
-  | TTuple (h, list) ->
-    List.fold_left
-      (fun _ item -> Format.fprintf ppf " * %a" pp_typ item)
-      (Format.fprintf ppf "(%a" pp_typ h)
-      list;
-    Format.fprintf ppf ")"
-  | TList t -> Format.fprintf ppf "%a list" pp_typ t
-  | TFString t -> Format.fprintf ppf "%a format_string" pp_typ t
-;;
-
 type error =
   [ `Occurs_check
   | `No_variable of string
@@ -44,7 +25,7 @@ let pp_error ppf : error -> unit = function
   | `Occurs_check -> Format.fprintf ppf {|Occurs check failed|}
   | `No_variable s -> Format.fprintf ppf {|Undefined variable "%s"|} s
   | `Unification_failed (l, r) ->
-    Format.fprintf ppf {|Unification failed on %a and %a|} pp_typ l pp_typ r
+    Format.fprintf ppf {|Unification failed on %a and %a|} Pprint.pp_typ l Pprint.pp_typ r
   | `Multiple_bound s ->
     Format.fprintf ppf {|Variable %s is bound several times in matching|} s
   | `Invalid_format_str s -> Format.fprintf ppf {|Invalid format string "%s"|} s
@@ -52,9 +33,9 @@ let pp_error ppf : error -> unit = function
     Format.fprintf
       ppf
       {|Invalid format concatination of "%a" and "%a"|}
-      pp_typ
+      Pprint.pp_typ
       t1
-      pp_typ
+      Pprint.pp_typ
       t2
   | `Impossible_state s ->
     Format.fprintf ppf {|Impossible inference algorithm state: %s|} s
@@ -269,15 +250,11 @@ end = struct
 
   let pp_subst ppf sub =
     Base.Map.iteri sub ~f:(fun ~key ~data ->
-      Stdlib.Format.fprintf ppf "[%d = %a] " key pp_typ data)
+      Stdlib.Format.fprintf ppf "[%d = %a] " key Pprint.pp_typ data)
   ;;
 end
 
 module Scheme = struct
-  let pp_scheme ppf = function
-    | Scheme (xs, t) -> Format.fprintf ppf "forall %a . %a" TypeVarSet.pp xs pp_typ t
-  ;;
-
   let free_vars (Scheme (bind_set, t)) = TypeVarSet.diff (Type.type_vars t) bind_set
 
   let apply sub (Scheme (bind_set, ty)) =
@@ -353,7 +330,7 @@ end = struct
       match find std key with
       | None ->
         Stdlib.Format.fprintf ppf "val %s : " key;
-        Scheme.pp_scheme ppf data;
+        Pprint.pp_scheme_binder ppf data;
         Stdlib.Format.fprintf ppf "\n"
       | Some _ -> Stdlib.Format.fprintf ppf "")
   ;;
