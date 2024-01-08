@@ -22,14 +22,6 @@
   (Instruction (Mov (Reg_64_imm_a (Rax, (Imm_int 60)))))
   (Instruction (Syscall (Nothing)))
   Registers:
-  Eax: 0
-  Ebp: 0
-  Ebx: 0
-  Ecx: 0
-  Edi: 0
-  Edx: 0
-  Esi: 0
-  Esp: 0
   Rax: 60
   Rbp: 0
   Rbx: 55
@@ -75,14 +67,6 @@
   (Instruction (Mov (Reg_64_imm_a (Rax, (Imm_int 60)))))
   (Instruction (Syscall (Nothing)))
   Registers:
-  Eax: 0
-  Ebp: 0
-  Ebx: 0
-  Ecx: 0
-  Edi: 0
-  Edx: 0
-  Esi: 0
-  Esp: 0
   Rax: 60
   Rbp: 0
   Rbx: 3
@@ -135,14 +119,6 @@
   (Instruction (Mov (Reg_64_imm_a (Rax, (Imm_int 60)))))
   (Instruction (Syscall (Nothing)))
   Registers:
-  Eax: 0
-  Ebp: 0
-  Ebx: 0
-  Ecx: 0
-  Edi: 0
-  Edx: 0
-  Esi: 0
-  Esp: 0
   Rax: 60
   Rbp: 0
   Rbx: 6

@@ -2,19 +2,10 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-type i32
 type i64
 type i128
 
 type _ register =
-  | Eax : i32 register
-  | Ebx : i32 register
-  | Ecx : i32 register
-  | Edx : i32 register
-  | Esi : i32 register
-  | Edi : i32 register
-  | Esp : i32 register
-  | Ebp : i32 register
   | Rax : i64 register
   | Rbx : i64 register
   | Rcx : i64 register
@@ -37,19 +28,14 @@ type _ immediate = Imm_int of int [@@deriving variants]
 type 'a register_ref = Register_ref of 'a register [@@deriving variants]
 
 type _ operand =
-  | Reg_32_reg_32 : i32 register * i32 register -> [> `Reg_32_reg_32 ] operand
   | Reg_64_reg_64 : i64 register * i64 register -> [> `Reg_64_reg_64 ] operand
   (** Double register operands *)
-  | Mem_32_mem_32 : i32 register_ref * i32 register_ref -> [> `Mem_32_mem_32 ] operand
   | Mem_64_mem_64 : i64 register_ref * i64 register_ref -> [> `Mem_64_mem_64 ] operand
   (** Double memory operands *)
-  | Reg_32_imm_a : i32 register * _ immediate -> [> `Reg_32_imm_a ] operand
   | Reg_64_imm_a : i64 register * _ immediate -> [> `Reg_64_imm_a ] operand
   (** Mixed double operands *)
   | Imm_a : _ immediate -> [> `Imm_a ] operand (** Single immidiate operand *)
-  | Reg_32 : i32 register -> [> `Reg_32 ] operand
   | Reg_64 : i64 register -> [> `Reg_64 ] operand (** Single register operand*)
-  | Mem_32 : i32 register_ref -> [> `Mem_32 ] operand
   | Mem_64 : i64 register_ref -> [> `Mem_64 ] operand (** Single memory operand*)
   | Nothing : [> `Nothing ] operand (** Mnemonic without operand (e.g Ret)*)
   | Label : string -> [> `Label ] operand (** Label operand (e.g Jmp lbl) *)
@@ -123,29 +109,18 @@ type register_wrapper = Wregister : 'a register -> register_wrapper
 
 let show_operand (Wargs op) =
   match op with
-  | Reg_32 x -> Printf.sprintf {|(Rezg_32 %s)|} (show_register x)
   | Reg_64 x -> Printf.sprintf {|(Reg_64 %s)|} (show_register x)
-  | Mem_32 x -> Printf.sprintf {|(Mem_32 %s)|} (show_register_ref x)
   | Mem_64 x -> Printf.sprintf {|(Mem_64 %s)|} (show_register_ref x)
-  | Mem_32_mem_32 (x, y) ->
-    Printf.sprintf
-      {|(Mem_32_mem_32 (%s, %s))|}
-      (show_register_ref x)
-      (show_register_ref y)
   | Mem_64_mem_64 (x, y) ->
     Printf.sprintf
       {|(Mem_64_mem_64 (%s, %s))|}
       (show_register_ref x)
       (show_register_ref y)
-  | Reg_32_reg_32 (x, y) ->
-    Printf.sprintf {|(Reg_32_reg_32 (%s, %s))|} (show_register x) (show_register y)
   | Reg_64_reg_64 (x, y) ->
     Printf.sprintf {|(Reg_64_reg_64 (%s, %s))|} (show_register x) (show_register y)
   | Imm_a x -> Printf.sprintf {|(Imm_a %s)|} (show_immediate x)
   | Label x -> Printf.sprintf {|(Label %s)|} x
   | Nothing -> "(Nothing)"
-  | Reg_32_imm_a (x, y) ->
-    Printf.sprintf {|(Reg_32_imm_a (%s, %s))|} (show_register x) (show_immediate y)
   | Reg_64_imm_a (x, y) ->
     Printf.sprintf {|(Reg_64_imm_a (%s, %s))|} (show_register x) (show_immediate y)
   | Reg_128_reg_64 (x, y) ->

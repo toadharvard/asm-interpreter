@@ -6,20 +6,6 @@ open Common
 open Angstrom
 open Ast
 
-let parse_32_register =
-  choice
-    ~failure_msg:"parse_32_register"
-    [ string_ci "eax" *> return eax
-    ; string_ci "ebx" *> return ebx
-    ; string_ci "ecx" *> return ecx
-    ; string_ci "edx" *> return edx
-    ; string_ci "esp" *> return esp
-    ; string_ci "ebp" *> return ebp
-    ; string_ci "esi" *> return esi
-    ; string_ci "edi" *> return edi
-    ]
-;;
-
 let parse_64_register =
   choice
     ~failure_msg:"parse_64_register"
@@ -49,10 +35,6 @@ let parse_128_register =
 ;;
 
 let between_brackets parser = between (char '[') (char ']') parser <?> "between_brackets"
-
-let parse_32_register_ref =
-  between_brackets parse_32_register >>| register_ref <?> "parse_32_register_ref"
-;;
 
 let parse_64_register_ref =
   between_brackets parse_64_register >>| register_ref <?> "parse_64_register_ref"
