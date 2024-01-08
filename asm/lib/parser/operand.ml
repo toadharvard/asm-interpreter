@@ -12,7 +12,6 @@ let parse_reg_64 = reg_64 <$> parse_64_register
 let parse_reg_128 = reg_128 <$> parse_128_register
 let parse_imm_a = imm_a <$> parse_immidiate
 
-
 let parse_mem_64_mem_64 =
   lift2 mem_64_mem_64 parse_64_register_ref (comma *> parse_64_register_ref)
 ;;
