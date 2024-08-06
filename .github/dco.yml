@@ -1,5 +1,0 @@
-# https://github.com/dcoapp/app Install it here
-allowRemediationCommits:
-  individual: true
-require:
-  members: false
